@@ -1,0 +1,43 @@
+<ASSEMBLER_INFO>
+ <VERSION>2.2.8</VERSION>
+ <DEVICE>"ATmega328P"</DEVICE>
+ <WORKING_DIR>C:\Users\ferch\Documents\Atmel Studio\7.0\Prelaboratorio1\Prelaboratorio1\Debug</WORKING_DIR>
+ <INCLUDE_PATH>
+  <DIR>C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.7.374\avrasm\inc</DIR>
+  <DIR>C:\Program Files (x86)\Atmel\Studio\7.0\toolchain\avr8\avrassembler\Include</DIR>
+  <DIR></DIR>
+ </INCLUDE_PATH>
+ <SOURCE_FILE>C:\Users\ferch\Documents\Atmel Studio\7.0\Prelaboratorio1\Prelaboratorio1\main.asm</SOURCE_FILE>
+ <INCLUDED_FILES>
+  <FILE>C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.7.374\avrasm\inc\m328Pdef.inc</FILE>
+  <FILE>C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.7.374\avrasm\inc\M328PDEF.inc</FILE>
+ </INCLUDED_FILES>
+ <OBJECT_FILES>
+  <FILE>C:\Users\ferch\Documents\Atmel Studio\7.0\Prelaboratorio1\Prelaboratorio1\Debug\Prelaboratorio1.obj</FILE>
+ </OBJECT_FILES>
+ <HEX_FILES>
+  <FILE>Prelaboratorio1.hex</FILE>
+ </HEX_FILES>
+ <OUTPUT_FILES>
+  <FILE>Prelaboratorio1.map</FILE>
+  <FILE>Prelaboratorio1.lss</FILE>
+ </OUTPUT_FILES>
+ <LABELS>
+  <Setup><FILE>C:\Users\ferch\Documents\Atmel Studio\7.0\Prelaboratorio1\Prelaboratorio1\main.asm</FILE><LINE>20</LINE></Setup>
+  <Loop><FILE>C:\Users\ferch\Documents\Atmel Studio\7.0\Prelaboratorio1\Prelaboratorio1\main.asm</FILE><LINE>39</LINE></Loop>
+  <Counter1><FILE>C:\Users\ferch\Documents\Atmel Studio\7.0\Prelaboratorio1\Prelaboratorio1\main.asm</FILE><LINE>45</LINE></Counter1>
+  <Counter2><FILE>C:\Users\ferch\Documents\Atmel Studio\7.0\Prelaboratorio1\Prelaboratorio1\main.asm</FILE><LINE>79</LINE></Counter2>
+  <PlusCounter1><FILE>C:\Users\ferch\Documents\Atmel Studio\7.0\Prelaboratorio1\Prelaboratorio1\main.asm</FILE><LINE>55</LINE></PlusCounter1>
+  <MinusCounter1><FILE>C:\Users\ferch\Documents\Atmel Studio\7.0\Prelaboratorio1\Prelaboratorio1\main.asm</FILE><LINE>67</LINE></MinusCounter1>
+  <end><FILE>C:\Users\ferch\Documents\Atmel Studio\7.0\Prelaboratorio1\Prelaboratorio1\main.asm</FILE><LINE>50</LINE></end>
+  <Adder><FILE>C:\Users\ferch\Documents\Atmel Studio\7.0\Prelaboratorio1\Prelaboratorio1\main.asm</FILE><LINE>109</LINE></Adder>
+  <delayP1><FILE>C:\Users\ferch\Documents\Atmel Studio\7.0\Prelaboratorio1\Prelaboratorio1\main.asm</FILE><LINE>57</LINE></delayP1>
+  <delayM1><FILE>C:\Users\ferch\Documents\Atmel Studio\7.0\Prelaboratorio1\Prelaboratorio1\main.asm</FILE><LINE>69</LINE></delayM1>
+  <PlusCounter2><FILE>C:\Users\ferch\Documents\Atmel Studio\7.0\Prelaboratorio1\Prelaboratorio1\main.asm</FILE><LINE>85</LINE></PlusCounter2>
+  <MinusCounter2><FILE>C:\Users\ferch\Documents\Atmel Studio\7.0\Prelaboratorio1\Prelaboratorio1\main.asm</FILE><LINE>97</LINE></MinusCounter2>
+  <delayP2><FILE>C:\Users\ferch\Documents\Atmel Studio\7.0\Prelaboratorio1\Prelaboratorio1\main.asm</FILE><LINE>87</LINE></delayP2>
+  <delayM2><FILE>C:\Users\ferch\Documents\Atmel Studio\7.0\Prelaboratorio1\Prelaboratorio1\main.asm</FILE><LINE>99</LINE></delayM2>
+  <no><FILE>C:\Users\ferch\Documents\Atmel Studio\7.0\Prelaboratorio1\Prelaboratorio1\main.asm</FILE><LINE>128</LINE></no>
+  <end_sum><FILE>C:\Users\ferch\Documents\Atmel Studio\7.0\Prelaboratorio1\Prelaboratorio1\main.asm</FILE><LINE>123</LINE></end_sum>
+ </LABELS>
+</ASSEMBLER_INFO>
