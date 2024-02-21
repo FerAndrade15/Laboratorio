@@ -1,10 +1,10 @@
 
-AVRASM ver. 2.2.8  C:\Users\ferch\Documents\Atmel Studio\7.0\Laboratorio3\Laboratorio3\main.asm Tue Feb 20 13:37:53 2024
+AVRASM ver. 2.2.8  C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Laboratorio3\Laboratorio3\main.asm Tue Feb 20 14:25:13 2024
 
 [builtin](2): Including file 'C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.7.374\avrasm\inc\m328Pdef.inc'
-C:\Users\ferch\Documents\Atmel Studio\7.0\Laboratorio3\Laboratorio3\main.asm(11): Including file 'C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.7.374\avrasm\inc\M328PDEF.inc'
+C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Laboratorio3\Laboratorio3\main.asm(11): Including file 'C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.7.374\avrasm\inc\M328PDEF.inc'
 [builtin](2): Including file 'C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.7.374\avrasm\inc\m328Pdef.inc'
-C:\Users\ferch\Documents\Atmel Studio\7.0\Laboratorio3\Laboratorio3\main.asm(11): Including file 'C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.7.374\avrasm\inc\M328PDEF.inc'
+C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Laboratorio3\Laboratorio3\main.asm(11): Including file 'C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.7.374\avrasm\inc\M328PDEF.inc'
                                  
                                  //*******************************************************************
                                  
@@ -1046,7 +1046,7 @@ C:\Users\ferch\Documents\Atmel Studio\7.0\Laboratorio3\Laboratorio3\main.asm(11)
                                  .org 0x0006
 000006 940c 007d                 	JMP INT_PINB		//Pin Change Direction
                                  .org 0x0020
-000020 940c 0088                 	JMP INT_TIM0_OVF	//Timer0 Subroutine
+000020 940c 009f                 	JMP INT_TIM0_OVF	//Timer0 Subroutine
                                  START:
                                  .def binary_counter  =	R17
                                  .def fivems_counter  =	R18
@@ -1054,7 +1054,6 @@ C:\Users\ferch\Documents\Atmel Studio\7.0\Laboratorio3\Laboratorio3\main.asm(11)
                                  .def output_display  =	R20
                                  .def seconds_counter =	R21
                                  .def dec_sec_counter =	R22
-                                 .def portd_output	 =	R23
                                  // Stack Pointer ----------------------------------------------------
 000022 ef0f                      LDI R16, LOW(RAMEND)
 000023 bf0d                      OUT SPL, R16
@@ -1091,7 +1090,7 @@ C:\Users\ferch\Documents\Atmel Studio\7.0\Laboratorio3\Laboratorio3\main.asm(11)
 000043 2711                      	CLR binary_counter
 000044 2755                      	CLR seconds_counter
 000045 2766                      	CLR dec_sec_counter
-000046 2777                      	CLR portd_output
+000046 2777                      	CLR R23
                                  //Main loop ---------------------------------------------------------
                                  Loop:
 000047 f17a                      	BRBS 2, change_display
@@ -1107,31 +1106,31 @@ C:\Users\ferch\Documents\Atmel Studio\7.0\Laboratorio3\Laboratorio3\main.asm(11)
 000050 3059                      	CPI seconds_counter, 0x09
 000051 f0e1                      	BREQ reset1
 000052 9553                      	INC seconds_counter
+000053 e108                      	LDI R16, 24	
+000054 9300 006b                 	STS PCMSK0, R16						;Pin Change Mask Register * PB3 & PB4
                                  assign_display1:
-000053 9a29                      	SBI PORTB, PB1
-000054 982a                      	CBI PORTB, PB2
-000055 e0e0                      	LDI ZL, LOW(DISPLAY_C<<1)		;Low byte from program memory table start
-000056 0fe5                      	ADD ZL, seconds_counter
-000057 9144                      	LPM output_display, Z
-000058 b948                      	OUT PORTC, output_display
-000059 9670                      	ADIW ZH:ZL, 0x10
+000056 9a29                      	SBI PORTB, PB1
+000057 982a                      	CBI PORTB, PB2
+000058 e0e0                      	LDI ZL, LOW(DISPLAY_C<<1)		;Low byte from program memory table start
+000059 0fe5                      	ADD ZL, seconds_counter
 00005a 9144                      	LPM output_display, Z
-00005b 0f47                      	ADD output_display, portd_output
-00005c b94b                      	OUT PORTD, output_display
-00005d 940c 0048                 	JMP counters
+00005b b948                      	OUT PORTC, output_display
+00005c 9670                      	ADIW ZH:ZL, 0x10
+00005d 9144                      	LPM output_display, Z
+00005e 0f47                      	ADD output_display, R23
+00005f b94b                      	OUT PORTD, output_display
+000060 940c 0048                 	JMP counters
                                  assign_display2:
-00005f 9829                      	CBI PORTB, PB1
-000060 9a2a                      	SBI PORTB, PB2
-000061 e0e0                      	LDI ZL, LOW(DISPLAY_C<<1)		;Low byte from program memory table start
-000062 0fe6                      	ADD ZL, dec_sec_counter
-000063 9144                      	LPM output_display, Z
-000064 b948                      	OUT PORTC, output_display
-000065 9670                      	ADIW ZH:ZL, 0x10
+000062 9829                      	CBI PORTB, PB1
+000063 9a2a                      	SBI PORTB, PB2
+000064 e0e0                      	LDI ZL, LOW(DISPLAY_C<<1)		;Low byte from program memory table start
+000065 0fe6                      	ADD ZL, dec_sec_counter
 000066 9144                      	LPM output_display, Z
-000067 0f47                      	ADD output_display, portd_output
-000068 b94b                      	OUT PORTD, output_display
-000069 e001                      	LDI R16, 1
-00006a 9300 0068                 	STS PCICR, R16						;Pin Change Interrupt Control Register
+000067 b948                      	OUT PORTC, output_display
+000068 9670                      	ADIW ZH:ZL, 0x10
+000069 9144                      	LPM output_display, Z
+00006a b94b                      	OUT PORTD, output_display
+00006b 0f47                      	ADD output_display, R23
 00006c 940c 0048                 	JMP counters
                                  reset1:
 00006e 2755                      	CLR seconds_counter
@@ -1145,28 +1144,56 @@ C:\Users\ferch\Documents\Atmel Studio\7.0\Laboratorio3\Laboratorio3\main.asm(11)
                                  change_display:	
 000077 94a8                      	CLN
 000078 fd21                      	SBRC fivems_counter, 1
-000079 940c 0053                 	JMP assign_display1
-00007b 940c 005f                 	JMP assign_display2
+000079 940c 0056                 	JMP assign_display1
+00007b 940c 0062                 	JMP assign_display2
                                  //Pin Change Interruption Subroutine --------------------------------
                                  INT_PINB:
-00007d b183                      	IN R24, PINB
-00007e ff84                      	SBRS R24, PB4
-00007f 9513                      	INC binary_counter
-000080 ff83                      	SBRS R24, PB3
-000081 951a                      	DEC binary_counter
-000082 e000                      	LDI R16, 0
-000083 9300 0068                 	STS PCICR, R16						;Pin Change Interrupt Control Register
-000085 9300 003f                 	STS SREG, R16
-000087 9518                      	RETI
+00007d 2700                      	CLR R16
+00007e 9300 006b                 	STS PCMSK0, R16						;Pin Change Mask Register * PB3 & PB4
+000080 9100 003f                 	LDS R16, SREG
+000082 b183                      	IN R24, PINB
+000083 ff84                      	SBRS R24, PB4
+000084 940c 0089                 	JMP incrementar
+000086 ff83                      	SBRS R24, PB3
+000087 940c 008e                 	JMP decrementar
+                                 incrementar:
+000089 301f                      	CPI binary_counter, 0x0F
+00008a f031                      	BREQ close
+00008b 9513                      	INC binary_counter
+00008c 940c 0091                 	JMP close
+                                 decrementar:
+00008e 3010                      	CPI binary_counter, 0
+00008f f009                      	BREQ close
+000090 951a                      	DEC binary_counter
+                                 close:
+000091 3018                      	CPI binary_counter, 8
+000092 f418                      	BRSH onlastbit
+000093 9828                      	CBI PORTB, PB0
+000094 940c 0097                 	JMP final
+                                 onlastbit:
+000096 9a28                      	SBI PORTB, PB0
+                                 final:
+                                 	/*IN R20, PINB
+                                 	SBRS R20, PB4
+                                 	RJMP final
+                                 	SBRS R20, PB3
+                                 	RJMP final*/
+000097 2f71                      	MOV R23, binary_counter		;Generate a copy of binary counter
+000098 9572                      	SWAP R23					;Swap nibbles of the register
+000099 0f77                      	LSL R23						;Load Shifter to the left * 1 bit
+00009a 7e70                      	ANDI R23, 0xE0	
+00009b 9ad8                      	SBI PCIFR, PD0 
+00009c 9300 003f                 	STS SREG, R16
+00009e 9518                      	RETI
                                  //Timer Interruption Subroutine -------------------------------------
                                  INT_TIM0_OVF:
-000088 9428                      	SEN
-000089 9100 003f                 	LDS R16, SREG
-00008b 9523                      	INC fivems_counter
-00008c eb02                      	LDI R16, 178
-00008d bd06                      	OUT TCNT0, R16
-00008e 9300 003f                 	STS SREG, R16
-000090 9518                      	RETI
+00009f 9428                      	SEN
+0000a0 9100 003f                 	LDS R16, SREG
+0000a2 9523                      	INC fivems_counter
+0000a3 eb02                      	LDI R16, 178
+0000a4 bd06                      	OUT TCNT0, R16
+0000a5 9300 003f                 	STS SREG, R16
+0000a7 9518                      	RETI
                                  //Display codification  ---------------------------------------------
                                  .org 0x100
 000100 0107
@@ -1203,37 +1230,37 @@ counted separately from r26..r31 here.
 "ATmega328P" register use summary:
 x  :   0 y  :   0 z  :   6 r0 :   0 r1 :   0 r2 :   0 r3 :   0 r4 :   0 
 r5 :   0 r6 :   0 r7 :   0 r8 :   0 r9 :   0 r10:   0 r11:   0 r12:   0 
-r13:   0 r14:   0 r15:   0 r16:  29 r17:   3 r18:   7 r19:   3 r20:  14 
-r21:   5 r22:   5 r23:   3 r24:   3 r25:   0 r26:   0 r27:   0 r28:   0 
+r13:   0 r14:   0 r15:   0 r16:  30 r17:   7 r18:   7 r19:   3 r20:  14 
+r21:   5 r22:   5 r23:   7 r24:   3 r25:   0 r26:   0 r27:   0 r28:   0 
 r29:   0 r30:   8 r31:   4 
 Registers used: 12 out of 35 (34.3%)
 
 "ATmega328P" instruction use summary:
 .lds  :   0 .sts  :   0 adc   :   0 add   :   4 adiw  :   3 and   :   0 
-andi  :   0 asr   :   0 bclr  :   0 bld   :   0 brbc  :   0 brbs  :   1 
-brcc  :   0 brcs  :   0 break :   0 breq  :   2 brge  :   0 brhc  :   0 
+andi  :   1 asr   :   0 bclr  :   0 bld   :   0 brbc  :   0 brbs  :   1 
+brcc  :   0 brcs  :   0 break :   0 breq  :   4 brge  :   0 brhc  :   0 
 brhs  :   0 brid  :   0 brie  :   0 brlo  :   0 brlt  :   0 brmi  :   0 
-brne  :   2 brpl  :   0 brsh  :   0 brtc  :   0 brts  :   0 brvc  :   0 
-brvs  :   0 bset  :   0 bst   :   0 call  :   0 cbi   :   2 cbr   :   0 
-clc   :   0 clh   :   0 cli   :   0 cln   :   1 clr   :   9 cls   :   0 
+brne  :   2 brpl  :   0 brsh  :   1 brtc  :   0 brts  :   0 brvc  :   0 
+brvs  :   0 bset  :   0 bst   :   0 call  :   0 cbi   :   3 cbr   :   0 
+clc   :   0 clh   :   0 cli   :   0 cln   :   1 clr   :  10 cls   :   0 
 clt   :   0 clv   :   0 clz   :   0 com   :   0 cp    :   0 cpc   :   0 
-cpi   :   4 cpse  :   0 dec   :   1 eor   :   0 fmul  :   0 fmuls :   0 
-fmulsu:   0 icall :   0 ijmp  :   0 in    :   1 inc   :   5 jmp   :   9 
-ld    :   0 ldd   :   0 ldi   :  18 lds   :   1 lpm   :  12 lsl   :   0 
-lsr   :   0 mov   :   0 movw  :   0 mul   :   0 muls  :   0 mulsu :   0 
+cpi   :   7 cpse  :   0 dec   :   1 eor   :   0 fmul  :   0 fmuls :   0 
+fmulsu:   0 icall :   0 ijmp  :   0 in    :   1 inc   :   5 jmp   :  13 
+ld    :   0 ldd   :   0 ldi   :  17 lds   :   2 lpm   :  12 lsl   :   1 
+lsr   :   0 mov   :   1 movw  :   0 mul   :   0 muls  :   0 mulsu :   0 
 neg   :   0 nop   :   0 or    :   0 ori   :   0 out   :  15 pop   :   0 
 push  :   0 rcall :   0 ret   :   0 reti  :   2 rjmp  :   0 rol   :   0 
-ror   :   0 sbc   :   0 sbci  :   0 sbi   :   2 sbic  :   0 sbis  :   0 
+ror   :   0 sbc   :   0 sbci  :   0 sbi   :   4 sbic  :   0 sbis  :   0 
 sbiw  :   0 sbr   :   0 sbrc  :   1 sbrs  :   2 sec   :   0 seh   :   0 
 sei   :   1 sen   :   1 ser   :   0 ses   :   0 set   :   0 sev   :   0 
 sez   :   0 sleep :   0 spm   :   0 st    :   0 std   :   0 sts   :   7 
-sub   :   0 subi  :   0 swap  :   0 tst   :   0 wdr   :   0 
-Instructions used: 24 out of 113 (21.2%)
+sub   :   0 subi  :   0 swap  :   1 tst   :   0 wdr   :   0 
+Instructions used: 29 out of 113 (25.7%)
 
 "ATmega328P" memory use summary [bytes]:
 Segment   Begin    End      Code   Data   Used    Size   Use%
 ---------------------------------------------------------------
-[.cseg] 0x000000 0x000220    234     32    266   32768   0.8%
+[.cseg] 0x000000 0x000220    280     32    312   32768   1.0%
 [.dseg] 0x000100 0x000100      0      0      0    2048   0.0%
 [.eseg] 0x000000 0x000000      0      0      0    1024   0.0%
 

@@ -1,5 +1,5 @@
 
-AVRASM ver. 2.2.8  C:\Users\ferch\Documents\Atmel Studio\7.0\Laboratorio3\Laboratorio3\main.asm Tue Feb 20 13:37:53 2024
+AVRASM ver. 2.2.8  C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Laboratorio3\Laboratorio3\main.asm Tue Feb 20 14:25:13 2024
 
 
 EQU  SIGNATURE_000 0000001e
@@ -697,21 +697,25 @@ EQU  SPMRaddr     00000032
 EQU  INT_VECTORS_SIZE 00000034
 CSEG START        00000022
 CSEG INT_PINB     0000007d
-CSEG INT_TIM0_OVF 00000088
+CSEG INT_TIM0_OVF 0000009f
 DEF  binary_counter r17
 DEF  fivems_counter r18
 DEF  halfminute   r19
 DEF  output_display r20
 DEF  seconds_counter r21
 DEF  dec_sec_counter r22
-DEF  portd_output r23
 CSEG Setup        00000026
 CSEG DISPLAY_C    00000100
 CSEG Loop         00000047
 CSEG change_display 00000077
 CSEG counters     00000048
 CSEG reset1       0000006e
-CSEG assign_display1 00000053
-CSEG assign_display2 0000005f
+CSEG assign_display1 00000056
+CSEG assign_display2 00000062
 CSEG reset2       00000074
+CSEG incrementar  00000089
+CSEG decrementar  0000008e
+CSEG close        00000091
+CSEG onlastbit    00000096
+CSEG final        00000097
 CSEG DISPLAY_D    00000108

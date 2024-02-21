@@ -59,14 +59,13 @@ Setup:
 	CLR binary_counter
 	CLR seconds_counter
 	CLR dec_sec_counter
+	CLR R23
 //Main loop ---------------------------------------------------------
 Loop:
 	BRBS 2, change_display
 counters:
 	CPI fivems_counter, 100
 	BRNE Loop
-	LDI R16, 1
-	STS PCICR, R16						;Pin Change Interrupt Control Register
 	CLR fivems_counter
 	INC halfminute
 	CPI halfminute, 2
@@ -76,15 +75,18 @@ counters:
 	CPI seconds_counter, 0x09
 	BREQ reset1
 	INC seconds_counter
+	LDI R16, 24	
+	STS PCMSK0, R16						;Pin Change Mask Register * PB3 & PB4
 assign_display1:
 	SBI PORTB, PB1
 	CBI PORTB, PB2
-	LDI ZL, LOW(DISPLAY_C<<1)		;Low byte from program memory table start
+	LDI ZL, LOW(DISPLAY_C<<1)			;Low byte from program memory table start
 	ADD ZL, seconds_counter
 	LPM output_display, Z
 	OUT PORTC, output_display
 	ADIW ZH:ZL, 0x10
 	LPM output_display, Z
+	ADD output_display, R23
 	OUT PORTD, output_display
 	JMP counters
 assign_display2:
@@ -97,8 +99,7 @@ assign_display2:
 	ADIW ZH:ZL, 0x10
 	LPM output_display, Z
 	OUT PORTD, output_display
-	LDI R16, 1
-	STS PCICR, R16						;Pin Change Interrupt Control Register
+	ADD output_display, R23
 	JMP counters
 reset1:
 	CLR seconds_counter
@@ -116,6 +117,9 @@ change_display:
 	JMP assign_display2
 //Pin Change Interruption Subroutine --------------------------------
 INT_PINB:
+	CLR R16
+	STS PCMSK0, R16						;Pin Change Mask Register * PB3 & PB4
+	LDS R16, SREG
 	IN R24, PINB
 	SBRS R24, PB4
 	JMP incrementar
@@ -123,12 +127,26 @@ INT_PINB:
 	JMP decrementar
 incrementar:
 	CPI binary_counter, 0x0F
-
+	BREQ close
 	INC binary_counter
-decrementar
+	JMP close
+decrementar:
+	CPI binary_counter, 0
+	BREQ close
 	DEC binary_counter
-	LDI R16, 0
-	STS PCICR, R16						;Pin Change Interrupt Control Register
+close:
+	CPI binary_counter, 8
+	BRSH onlastbit
+	CBI PORTB, PB0
+	JMP final
+onlastbit:
+	SBI PORTB, PB0
+final:
+	MOV R23, binary_counter		;Generate a copy of binary counter
+	SWAP R23					;Swap nibbles of the register
+	LSL R23						;Load Shifter to the left * 1 bit
+	ANDI R23, 0xE0	
+	SBI PCIFR, PD0 
 	STS SREG, R16
 	RETI
 //Timer Interruption Subroutine -------------------------------------
