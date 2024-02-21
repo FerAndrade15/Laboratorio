@@ -118,7 +118,7 @@ change_display:
 //Pin Change Interruption Subroutine --------------------------------
 INT_PINB:
 	CLR R16
-	STS PCMSK0, R16						;Pin Change Mask Register * PB3 & PB4
+	STS PCMSK0, R16						;Pin Change Mask Register * PB3 & PB5
 	LDS R16, SREG
 	IN R24, PINB
 	SBRS R24, PB4
