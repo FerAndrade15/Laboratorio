@@ -1,5 +1,5 @@
 
-AVRASM ver. 2.2.8  C:\Users\ferch\Documents\Atmel Studio\7.0\Proyecto1\Proyecto1\main.asm Fri Mar 01 22:59:27 2024
+AVRASM ver. 2.2.8  C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.asm Sat Mar 02 11:29:47 2024
 
 
 EQU  SIGNATURE_000 0000001e
@@ -702,6 +702,7 @@ DSEG settings_days 00000103
 DSEG settings_month 00000104
 DSEG settings_years 00000105
 CSEG START        0000001e
+CSEG TIMER0_COMPA 00000037
 DEF  hours        r18
 DEF  minutes      r19
 DEF  seconds      r20
@@ -709,10 +710,10 @@ DEF  ten_ms       r21
 DEF  day          r22
 DEF  month        r23
 DEF  year         r24
+DEF  mode         r25
 CSEG Setup        00000022
 CSEG Loop         00000032
-CSEG completeinterrupt 0000004e
-CSEG leap_year    0000004a
+CSEG completeinterrupt 0000005d
 CSEG days_month   00000100
-CSEG incrementoftime 0000004d
-CSEG ldays_month  00000106
+CSEG checkmaxofmonth 00000052
+CSEG incrementmonth 00000057

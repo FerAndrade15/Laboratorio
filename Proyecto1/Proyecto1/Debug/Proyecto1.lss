@@ -1,12 +1,12 @@
 
-AVRASM ver. 2.2.8  C:\Users\ferch\Documents\Atmel Studio\7.0\Proyecto1\Proyecto1\main.asm Fri Mar 01 22:59:27 2024
+AVRASM ver. 2.2.8  C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.asm Sat Mar 02 11:29:47 2024
 
 [builtin](2): Including file 'C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.7.374\avrasm\inc\m328Pdef.inc'
-C:\Users\ferch\Documents\Atmel Studio\7.0\Proyecto1\Proyecto1\main.asm(11): Including file 'C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.7.374\avrasm\inc\M328PDEF.inc'
+C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.asm(11): Including file 'C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.7.374\avrasm\inc\M328PDEF.inc'
 [builtin](2): Including file 'C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.7.374\avrasm\inc\m328Pdef.inc'
-C:\Users\ferch\Documents\Atmel Studio\7.0\Proyecto1\Proyecto1\main.asm(11): Including file 'C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.7.374\avrasm\inc\M328PDEF.inc'
+C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.asm(11): Including file 'C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.7.374\avrasm\inc\M328PDEF.inc'
                                  
-                                 //********************************************
+                                 //*******************************************************************
                                  
                                  ;***** Created: 2011-02-09 12:03 ******* Source: ATmega328P.xml **********
                                  ;*************************************************************************
@@ -994,7 +994,7 @@ C:\Users\ferch\Documents\Atmel Studio\7.0\Proyecto1\Proyecto1\main.asm(11): Incl
                                  // Archivo: Proyecto1.asm
                                  // Hardware: ATMEGA328P
                                  // Created: 21/02/2024 8:06:46
-                                 //********************************************
+                                 //*******************************************************************
                                  // Encabezado -------------------------------------------------------
                                  .include "M328PDEF.inc"
                                  
@@ -1040,8 +1040,8 @@ C:\Users\ferch\Documents\Atmel Studio\7.0\Proyecto1\Proyecto1\main.asm(11): Incl
                                  #endif  /* _M328PDEF_INC_ */
                                  
                                  ; ***** END OF FILE ******************************************************
-                                 
                                  .dseg
+                                 //Settings registers ------------------------------------------------
                                  .org SRAM_START
 000100                           	settings_hours:		.byte 1
 000101                           	settings_minutes:	.byte 1
@@ -1049,15 +1049,12 @@ C:\Users\ferch\Documents\Atmel Studio\7.0\Proyecto1\Proyecto1\main.asm(11): Incl
 000103                           	settings_days:		.byte 1
 000104                           	settings_month:		.byte 1
 000105                           	settings_years:		.byte 1
-                                 
                                  .cseg 
                                  // Interrupt Vectors ------------------------------------------------
                                  .org 0x00					;Reset
 000000 940c 001e                 	JMP START
                                  .org 0x001C					;Compare Match A
-00001c 940c 001e                 	JMP START
-                                 	//JMP TIMER0_COMPA
-                                 
+00001c 940c 0037                 	JMP TIMER0_COMPA
                                  // Reset --------------------------------------------------------- //
                                  START:
                                  // Stack Pointer ----------------------------------------------------
@@ -1065,7 +1062,6 @@ C:\Users\ferch\Documents\Atmel Studio\7.0\Proyecto1\Proyecto1\main.asm(11): Incl
 00001f bf0d                      OUT SPL, R16
 000020 e018                      LDI R17, HIGH(RAMEND)
 000021 bf1e                      OUT SPH, R17
-                                 
                                  //Functional Registers ----------------------------------------------
                                  .def hours	= R18
                                  .def minutes= R19
@@ -1074,7 +1070,7 @@ C:\Users\ferch\Documents\Atmel Studio\7.0\Proyecto1\Proyecto1\main.asm(11): Incl
                                  .def day	= R22
                                  .def month	= R23
                                  .def year	= R24
-                                 
+                                 .def mode	= R25
                                  //General Settings --------------------------------------------------
                                  Setup:
 000022 e005                      	LDI R16, 0x05
@@ -1085,100 +1081,71 @@ C:\Users\ferch\Documents\Atmel Studio\7.0\Proyecto1\Proyecto1\main.asm(11): Incl
 000028 e90c                      	LDI R16, 0x9C
 000029 bd07                      	OUT OCR0A, R16				;Max for CTC Mode >> Generates interrrupt
 00002a 9478                      	SEI							;Enable all interruptions
-                                 
                                  	//Setting initial values
 00002b e653                      	LDI ten_ms, 99
 00002c e34b                      	LDI seconds, 59
 00002d e33b                      	LDI minutes, 59
 00002e e127                      	LDI hours, 23
-00002f e061                      	LDI day, 1
-000030 e072                      	LDI month, 2
+00002f e16e                      	LDI day, 30
+000030 e074                      	LDI month, 4
 000031 e188                      	LDI year, 24
-                                 
                                  //Main loop ---------------------------------------------------------
                                  Loop:
-000032 9553                      	INC ten_ms
-000033 3654                      	CPI ten_ms, 100				;ten_ms equals 1s
-000034 f4c9                      	BRNE completeinterrupt
-000035 2755                      	CLR ten_ms
-000036 9543                      	INC seconds
-000037 334c                      	CPI seconds, 60				;seconds equals 1m
-000038 f4a9                      	BRNE completeinterrupt
-000039 2744                      	CLR seconds
-00003a 9533                      	INC minutes
-00003b 333c                      	CPI minutes, 60				;minutes equals 1h
-00003c f489                      	BRNE completeinterrupt
-00003d 2733                      	CLR minutes
-00003e 9523                      	INC hours
-00003f 3128                      	CPI hours, 24				;day complete
-000040 f469                      	BRNE completeinterrupt
-000041 2722                      	CLR hours
-000042 2f18                      	MOV R17, year
-000043 7013                      	CBR R17, 0xFC
-000044 3010                      	CPI R17, 0
-000045 f021                      	BREQ leap_year				;
-000046 e0f2                      	LDI ZH, HIGH(days_month<<1);
-000047 e0e0                      	LDI ZL, LOW(days_month<<1)
-000048 940c 004d                 	JMP incrementoftime
-                                 leap_year:
-00004a e0f2                      	LDI ZH, HIGH(ldays_month<<1)
-00004b e0ec                      	LDI ZL, LOW(ldays_month<<1)
-00004c 0fe7                      	ADD ZL, month
-                                 incrementoftime:
-00004d 9114                      	LPM R17, Z
-                                 completeinterrupt:
-00004e fd50                      	SBRC ten_ms, PB0
-00004f 940c 0032                 	JMP Loop
+000032 fd50                      	SBRC ten_ms, PB0
+000033 940c 0032                 	JMP Loop
                                  	//Display
-000051 940c 0032                 	JMP Loop
-                                 
+000035 940c 0032                 	JMP Loop
                                  // CTC ----------------------------------------------------------- //
-                                 /*TIMER0_COMPA:	
-                                 	INC ten_ms
-                                 	CPI ten_ms, 100			;ten_ms equals 1s
-                                 	BRNE completeinterrupt
-                                 	CLR ten_ms
-                                 	INC seconds
-                                 	CPI seconds, 60			;seconds equals 1m
-                                 	BRNE completeinterrupt
-                                 	CLR seconds
-                                 	INC minutes
-                                 	CPI minutes, 60			;minutes equals 1h
-                                 	BRNE completeinterrupt
-                                 	CLR minutes
-                                 	INC hours
-                                 	CPI hours, 24			;day complete
-                                 	BRNE completeinterrupt
-                                 	CLR hours
-                                 	MOV R17, year
-                                 	CBR R17, 0xFC
-                                 	CPI R17, 0
-                                 	BREQ leap_year
-                                 	LDI ZH, HIGH(days_month<<1)
-                                 	LDI ZL, LOW(days_month<<1)
-                                 	JMP incrementoftime
-                                 leap_year:
-                                 	LDI ZH, HIGH(ldays_month<<1)
-                                 	LDI ZL, LOW(ldays_month<<1)
-                                 incrementoftime:
-                                 	CLR R17
+                                 TIMER0_COMPA:	
+000037 9553                      	INC ten_ms
+000038 3654                      	CPI ten_ms, 100				;ten_ms equals 1s
+000039 f519                      	BRNE completeinterrupt
+00003a 2755                      	CLR ten_ms					;restart ten_ms
+00003b 9543                      	INC seconds
+00003c 334c                      	CPI seconds, 60				;seconds equals 1m
+00003d f4f9                      	BRNE completeinterrupt
+00003e 2744                      	CLR seconds					;restart seconds
+00003f 9533                      	INC minutes
+000040 333c                      	CPI minutes, 60				;minutes equals 1h
+000041 f4d9                      	BRNE completeinterrupt
+000042 2733                      	CLR minutes					;restart minutes
+000043 9523                      	INC hours
+000044 3128                      	CPI hours, 24				;day complete
+000045 f4b9                      	BRNE completeinterrupt
+000046 2722                      	CLR hours					;restart hours
+000047 e0f2                      	LDI ZH, HIGH(days_month<<1)	;redirect to days of month table
+000048 e0e0                      	LDI ZL, LOW(days_month<<1)
+000049 0fe7                      	ADD ZL, month				;correct to the actual month
+00004a 9104                      	LPM R16, Z					;max day of month
+00004b 3072                      	CPI month, 2
+00004c f429                      	BRNE checkmaxofmonth
+00004d 2f18                      	MOV R17, year
+00004e 7013                      	CBR R17, 0xFC				;conserve less 2 significant bits	
+00004f 3010                      	CPI R17, 0					;check if the number is multiple of four
+000050 f409                      	BRNE checkmaxofmonth
+000051 e10d                      	LDI R16, 29					;max of february/leap_year
+                                 checkmaxofmonth:
+000052 1706                      	CP R16, day					;check if the actual day is the max of the month
+000053 f019                      	BREQ incrementmonth			;change of month
+000054 9563                      	INC day		
+000055 940c 005d                 	JMP completeinterrupt
+                                 incrementmonth:
+000057 e061                      	LDI day, 1					;start of month
+000058 9573                      	INC month
+000059 307d                      	CPI month, 13				;restart of the year
+00005a f411                      	BRNE completeinterrupt
+00005b e071                      	LDI month, 1
+00005c 9583                      	INC year					;increment years
                                  completeinterrupt:
-                                 	RETI*/
-                                 
+00005d 9518                      	RETI
+                                 //Info Tables -------------------------------------------------------
                                  .org 0x100
-                                 	//ncode_numbers:		.DB 252,96,218,242,102,182,190,224,254,246			;10 bytes
-                                 	//ucode_numbers:		.DB 252,12,218,158,46,246,28,254,190				;10 bytes
-000100 1c1f
-000101 1e1f
-000102 1e1f
-000103 1f1f
-000104 1f1e
-000105 1f1e                          days_month:			.DB 31,28,31,30,31,30,31,31,30,31,30,31			;12 bytes	
-000106 1d1f
-000107 1e1f
-000108 1e1f
-000109 1f1f
-00010a 1f1e
+000100 1f00
+000101 1f1c
+000102 1f1e
+000103 1f1e
+000104 1e1f
+000105 1e1f
 
 
 RESOURCE USE INFORMATION
@@ -1198,9 +1165,9 @@ counted separately from r26..r31 here.
 "ATmega328P" register use summary:
 x  :   0 y  :   0 z  :   1 r0 :   0 r1 :   0 r2 :   0 r3 :   0 r4 :   0 
 r5 :   0 r6 :   0 r7 :   0 r8 :   0 r9 :   0 r10:   0 r11:   0 r12:   0 
-r13:   0 r14:   0 r15:   0 r16:   9 r17:   6 r18:   4 r19:   4 r20:   4 
-r21:   5 r22:   1 r23:   2 r24:   2 r25:   0 r26:   0 r27:   0 r28:   0 
-r29:   0 r30:   3 r31:   2 
+r13:   0 r14:   0 r15:   0 r16:  12 r17:   5 r18:   4 r19:   4 r20:   4 
+r21:   5 r22:   4 r23:   6 r24:   3 r25:   0 r26:   0 r27:   0 r28:   0 
+r29:   0 r30:   2 r31:   1 
 Registers used: 12 out of 35 (34.3%)
 
 "ATmega328P" instruction use summary:
@@ -1208,27 +1175,27 @@ Registers used: 12 out of 35 (34.3%)
 andi  :   0 asr   :   0 bclr  :   0 bld   :   0 brbc  :   0 brbs  :   0 
 brcc  :   0 brcs  :   0 break :   0 breq  :   1 brge  :   0 brhc  :   0 
 brhs  :   0 brid  :   0 brie  :   0 brlo  :   0 brlt  :   0 brmi  :   0 
-brne  :   4 brpl  :   0 brsh  :   0 brtc  :   0 brts  :   0 brvc  :   0 
+brne  :   7 brpl  :   0 brsh  :   0 brtc  :   0 brts  :   0 brvc  :   0 
 brvs  :   0 bset  :   0 bst   :   0 call  :   0 cbi   :   0 cbr   :   1 
 clc   :   0 clh   :   0 cli   :   0 cln   :   0 clr   :   4 cls   :   0 
-clt   :   0 clv   :   0 clz   :   0 com   :   0 cp    :   0 cpc   :   0 
-cpi   :   5 cpse  :   0 dec   :   0 eor   :   0 fmul  :   0 fmuls :   0 
-fmulsu:   0 icall :   0 ijmp  :   0 in    :   0 inc   :   4 jmp   :   5 
-ld    :   0 ldd   :   0 ldi   :  16 lds   :   0 lpm   :   2 lsl   :   0 
+clt   :   0 clv   :   0 clz   :   0 com   :   0 cp    :   1 cpc   :   0 
+cpi   :   7 cpse  :   0 dec   :   0 eor   :   0 fmul  :   0 fmuls :   0 
+fmulsu:   0 icall :   0 ijmp  :   0 in    :   0 inc   :   7 jmp   :   5 
+ld    :   0 ldd   :   0 ldi   :  17 lds   :   0 lpm   :   2 lsl   :   0 
 lsr   :   0 mov   :   1 movw  :   0 mul   :   0 muls  :   0 mulsu :   0 
 neg   :   0 nop   :   0 or    :   0 ori   :   0 out   :   5 pop   :   0 
-push  :   0 rcall :   0 ret   :   0 reti  :   0 rjmp  :   0 rol   :   0 
+push  :   0 rcall :   0 ret   :   0 reti  :   1 rjmp  :   0 rol   :   0 
 ror   :   0 sbc   :   0 sbci  :   0 sbi   :   0 sbic  :   0 sbis  :   0 
 sbiw  :   0 sbr   :   0 sbrc  :   1 sbrs  :   0 sec   :   0 seh   :   0 
 sei   :   1 sen   :   0 ser   :   0 ses   :   0 set   :   0 sev   :   0 
 sez   :   0 sleep :   0 spm   :   0 st    :   0 std   :   0 sts   :   1 
 sub   :   0 subi  :   0 swap  :   0 tst   :   0 wdr   :   0 
-Instructions used: 15 out of 113 (13.3%)
+Instructions used: 17 out of 113 (15.0%)
 
 "ATmega328P" memory use summary [bytes]:
 Segment   Begin    End      Code   Data   Used    Size   Use%
 ---------------------------------------------------------------
-[.cseg] 0x000000 0x000218    114     24    138   32768   0.4%
+[.cseg] 0x000000 0x00020e    136     14    150   32768   0.5%
 [.dseg] 0x000100 0x000106      0      6      6    2048   0.3%
 [.eseg] 0x000000 0x000000      0      0      0    1024   0.0%
 
