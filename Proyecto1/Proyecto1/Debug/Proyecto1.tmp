@@ -1,0 +1,41 @@
+<ASSEMBLER_INFO>
+ <VERSION>2.2.8</VERSION>
+ <DEVICE>"ATmega328P"</DEVICE>
+ <WORKING_DIR>C:\Users\ferch\Documents\Atmel Studio\7.0\Proyecto1\Proyecto1\Debug</WORKING_DIR>
+ <INCLUDE_PATH>
+  <DIR>C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.7.374\avrasm\inc</DIR>
+  <DIR>C:\Program Files (x86)\Atmel\Studio\7.0\toolchain\avr8\avrassembler\Include</DIR>
+  <DIR></DIR>
+ </INCLUDE_PATH>
+ <SOURCE_FILE>C:\Users\ferch\Documents\Atmel Studio\7.0\Proyecto1\Proyecto1\main.asm</SOURCE_FILE>
+ <INCLUDED_FILES>
+  <FILE>C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.7.374\avrasm\inc\m328Pdef.inc</FILE>
+  <FILE>C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.7.374\avrasm\inc\M328PDEF.inc</FILE>
+ </INCLUDED_FILES>
+ <OBJECT_FILES>
+  <FILE>C:\Users\ferch\Documents\Atmel Studio\7.0\Proyecto1\Proyecto1\Debug\Proyecto1.obj</FILE>
+ </OBJECT_FILES>
+ <HEX_FILES>
+  <FILE>Proyecto1.hex</FILE>
+ </HEX_FILES>
+ <OUTPUT_FILES>
+  <FILE>Proyecto1.map</FILE>
+  <FILE>Proyecto1.lss</FILE>
+ </OUTPUT_FILES>
+ <LABELS>
+  <settings_hours><FILE>C:\Users\ferch\Documents\Atmel Studio\7.0\Proyecto1\Proyecto1\main.asm</FILE><LINE>15</LINE></settings_hours>
+  <settings_minutes><FILE>C:\Users\ferch\Documents\Atmel Studio\7.0\Proyecto1\Proyecto1\main.asm</FILE><LINE>16</LINE></settings_minutes>
+  <settings_seconds><FILE>C:\Users\ferch\Documents\Atmel Studio\7.0\Proyecto1\Proyecto1\main.asm</FILE><LINE>17</LINE></settings_seconds>
+  <settings_days><FILE>C:\Users\ferch\Documents\Atmel Studio\7.0\Proyecto1\Proyecto1\main.asm</FILE><LINE>18</LINE></settings_days>
+  <settings_month><FILE>C:\Users\ferch\Documents\Atmel Studio\7.0\Proyecto1\Proyecto1\main.asm</FILE><LINE>19</LINE></settings_month>
+  <settings_years><FILE>C:\Users\ferch\Documents\Atmel Studio\7.0\Proyecto1\Proyecto1\main.asm</FILE><LINE>20</LINE></settings_years>
+  <START><FILE>C:\Users\ferch\Documents\Atmel Studio\7.0\Proyecto1\Proyecto1\main.asm</FILE><LINE>31</LINE></START>
+  <Setup><FILE>C:\Users\ferch\Documents\Atmel Studio\7.0\Proyecto1\Proyecto1\main.asm</FILE><LINE>48</LINE></Setup>
+  <Loop><FILE>C:\Users\ferch\Documents\Atmel Studio\7.0\Proyecto1\Proyecto1\main.asm</FILE><LINE>68</LINE></Loop>
+  <completeinterrupt><FILE>C:\Users\ferch\Documents\Atmel Studio\7.0\Proyecto1\Proyecto1\main.asm</FILE><LINE>98</LINE></completeinterrupt>
+  <leap_year><FILE>C:\Users\ferch\Documents\Atmel Studio\7.0\Proyecto1\Proyecto1\main.asm</FILE><LINE>92</LINE></leap_year>
+  <days_month><FILE>C:\Users\ferch\Documents\Atmel Studio\7.0\Proyecto1\Proyecto1\main.asm</FILE><LINE>140</LINE></days_month>
+  <incrementoftime><FILE>C:\Users\ferch\Documents\Atmel Studio\7.0\Proyecto1\Proyecto1\main.asm</FILE><LINE>96</LINE></incrementoftime>
+  <ldays_month><FILE>C:\Users\ferch\Documents\Atmel Studio\7.0\Proyecto1\Proyecto1\main.asm</FILE><LINE>141</LINE></ldays_month>
+ </LABELS>
+</ASSEMBLER_INFO>
