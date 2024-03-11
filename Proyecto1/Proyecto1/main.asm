@@ -21,7 +21,11 @@
 // Interrupt Vectors ------------------------------------------------
 .org 0x00						;Reset
 	JMP START
-.org 0x001C						;Compare Match A
+.org 0x0006						;Pin Change Interrupt Request 0
+	JMP PCINT0_INT
+.org 0x0016						;Compare Match A Timer1
+	JMP TIMER1_COMPA
+.org 0x001C						;Compare Match A Timer0
 	JMP TIMER0_COMPA
 // Reset --------------------------------------------------------- //
 START:
@@ -36,20 +40,37 @@ OUT SPH, R17
 .def hours	= R18
 .def minutes= R19
 .def seconds= R20
-.def five_ms= R21
-.def day	= R22
-.def month	= R23
-.def year	= R24
-.def delmode= R25
+.def day	= R21
+.def month	= R22
+.def year	= R23
+.def mode	= R24
+.def dissel = R25
 //General Settings --------------------------------------------------
 Setup:
-	LDI R16, 0x05
-	OUT TCCR0B, R16				;Clock selected >> Prescaler at 1024
+	//PinChange
+	LDI R16, (1<<PCIE0)
+	STS PCICR, R16				;Enable Pin Change Interrupt for PORTB
+	LDI R16, (1<<PCINT4)|(1<<PCINT3)|(1<<PCINT2)
+	STS PCMSK0, R16				;Enable Pin Change on PB4, PB3 and PB2
+	//Timer0
+	LDI R16, (1<<OCIE0A)	
+	STS TIMSK0, R16				;Enable Interrupt Mask for Compare Match A Timer0
+	OUT TCCR0A, R16				;Timer0 mode >> CTC Mode
+	LDI R16, 0x27
+	OUT OCR0A, R16				;Max for CTC Mode Timer0 >> Generates interrrupt0
+	LDI R16, (1<<CS02)|(1<<CS00)
+	OUT TCCR0B, R16				;Timer0 clock selected >> Prescaler at 1024
+	//Timer1
 	LDI R16, 0x02	
-	OUT TCCR0A, R16				;Timer mode >> CTC Mode
-	STS TIMSK0, R16				;Enable Interrupt Mask for Compare Match A
-	LDI R16, 0x4E
-	OUT OCR0A, R16				;Max for CTC Mode >> Generates interrrupt
+	STS TIMSK1, R16				;Enable Interrupt Mask for Compare Match A Timer1
+	LDI R16, 0x3D
+	STS OCR1AH, R16				;Max for CTC Mode Low Timer1 >> Generates interrrupt1
+	LDI R16, 0x09 
+	STS OCR1AL, R16				;Max for CTC Mode High Timer1 >> Generates interrrupt1
+	CLR R16
+	STS TCCR1A, R16				;Timer1 mode >> CTC Mode
+	LDI R16, 0x0D
+	STS TCCR1B, R16				;Timer1 Prescaler at 1024 and CTC Settings
 	SEI							;Enable all interruptions
 	//Inputs and outputs
 	CLR R16
@@ -58,28 +79,27 @@ Setup:
 	OUT DDRC, R16				;Set all available PortC as output
 	LDI R16, 0xFF
 	OUT DDRD, R16				;Set all PortD as output
+	LDI R16, 0x03
+	OUT DDRB, R16				;Set as outputs PB0&PB1 for led mode
+	LDI R16, 0x1C					
+	OUT PORTB, R16				;Buttons pull-ups			
 	//Setting initial values
-	LDI five_ms, 199
-	LDI seconds, 0x59
+	LDI seconds, 0x50
 	LDI minutes, 0x59
 	LDI hours, 0x23
 	LDI day, 0x28
 	LDI month, 2
-	LDI year, 0x99
-	LDI delmode, 0x80
+	LDI year, 0x24
+	LDI dissel, 0x08
 //Main loop ---------------------------------------------------------
 Loop:
 //Settings of Mode
-	SBRS delmode, 7				;Check change of display
+	SBRS dissel, 3				;Check change of display
 	JMP Loop
-	MOV R16, delmode
-	CBR R16, 0xF0				;Mode code
-	MOV R17, delmode
-	SWAP R17
-	CBR R17, 0xF8				;Display selector
+	CBR dissel, 0xF8			;Display selector
 	LDI ZH, HIGH(modejumps<<1)	;Redirect to mode jump's table
 	LDI ZL, LOW(modejumps<<1)
-	ADD ZL, R16
+	ADD ZL, mode
 	LPM R30, Z
 	CLR R31
 	IJMP
@@ -87,41 +107,35 @@ Loop:
 display_settings:
 	LDI ZH, HIGH(selector<<1)	;Redirect to selector's values table
 	LDI ZL, LOW(selector<<1)
-	ADD ZL, R17
+	ADD ZL, dissel
 	LPM sel_dis, Z
 	OUT PORTC, sel_dis
 	OUT PORTD, display
-	MOV R16, delmode
-	CBR R16, 0xF0				;Mode code
-	CPI R17, 5
+	CPI dissel, 5
 	BREQ reset
-	INC R17
-	SWAP R17
-	JMP delay_display_mode
+	INC dissel
+	JMP Loop
 reset:
-	CLR R17
-delay_display_mode:
-	ADD R16, R17
-	MOV delmode, R16
+	CLR dissel
 	JMP Loop
 //Modes
 MST:							;Mode >> Show Time
-	CPI R17, 2
+	CPI dissel, 2
 	BRLO hours_settings
 	BREQ minutes1
-	CPI R17, 3
+	CPI dissel, 3
 	BREQ minutes0
 	MOV R16, seconds
-	SBRS R17, 0
+	SBRC dissel, 0
 	JMP seconds0
 	//seconds1
 	SWAP R16
 	CBR R16, 0xF0
-	CALL D2
+	CALL D4_D5
 	JMP display_settings
 	hours_settings:
 		MOV R16, hours
-		SBRS R17, 0
+		SBRS dissel, 0
 		SWAP R16
 		CBR R16, 0xF0
 		CALL D0_D1
@@ -139,10 +153,44 @@ MST:							;Mode >> Show Time
 		JMP display_settings	
 	seconds0:
 		CBR R16, 0xF0
-		CALL D3
+		CALL D4_D5
 		JMP display_settings
-SDM:
-	JMP Loop
+SDM:							;Mode >> Show Date
+	CPI dissel, 2
+	BRLO days_settings
+	BREQ month1
+	CPI dissel, 3
+	BREQ month0
+	MOV R16, year
+	SBRC dissel, 0
+	JMP year0
+	//year1
+	SWAP R16
+	CBR R16, 0xF0
+	CALL D4_D5
+	JMP display_settings
+	days_settings:
+		MOV R16, day
+		SBRS dissel, 0
+		SWAP R16
+		CBR R16, 0xF0
+		CALL D0_D1
+		JMP display_settings
+	month1:
+		MOV R16, month
+		SWAP R16
+		CBR R16, 0xF0
+		CALL D2
+		JMP display_settings
+	month0:
+		MOV R16, month
+		CBR R16, 0xF0
+		CALL D3
+		JMP display_settings	
+	year0:
+		CBR R16, 0xF0
+		CALL D4_D5
+		JMP display_settings
 ATM:
 	JMP Loop
 ADM:
@@ -177,22 +225,23 @@ D3:
 	LPM display, Z
 	RET
 D4_D5:
-	LDI ZH, HIGH(show2updown<<1)	;Redirect to displayed value
+	LDI ZH, HIGH(show2updown<<1);Redirect to displayed value
 	LDI ZL, LOW(show2updown<<1)
 	ADD ZL, R16
 	LPM display, Z
 	RET	
+//BUTTONS PIN CHANGE ---------------------------------------------- //
+PCINT0_INT:
+	RETI
 //CTC ------------------------------------------------------------ //
-TIMER0_COMPA:	
+TIMER0_COMPA:
+	SBR dissel, 0x08			;4ms delay
+	RETI
+TIMER1_COMPA:
 	PUSH R16					;Save initial conditions
 	PUSH R17
 	LDS R16, SREG
 	PUSH R16
-	INC five_ms					;Time counter increment
-	SBR delmode, 0x80			;5ms delay
-	CPI five_ms, 200			;Five_ms equals 1s
-	BRNE completeinterrupt
-	CLR five_ms					;Restart five_ms
 	MOV R16, seconds
 	CALL time_inc
 	MOV seconds, R16
@@ -264,11 +313,11 @@ normal_increment:
 	INC R16
 	RET
 // Data Tables --------------------------------------------------- //
-.org 0x100
+.org 0x150
 	days_month:	.DB 0,49,40,49,48,49,48,49,49,48,49,48,49,0
 	modejumps:	.DB MST,SDM,ATM,ADM,TS,DSM,ATSM,ADSM,AAM,0
 	selector:	.DB 1,2,4,8,16,32
-	show2nm:	.DB 235,129,218,217,177,121,123,193,251,249
-	showupdown:	.DB 238,40,205,109,43,103,231,44,239,111
-	shownormal:	.DB 238,130,220,214,178,118,126,194,254,246
-	show2updown:.DB 190,24,173,157,27,151,183,28,191,159
+	show2nm:	.DB 235,130,217,218,178,122,123,194,251,250
+	showupdown:	.DB 237,129,206,199,163,103,231,193,239,231
+	shownormal:	.DB 237,129,220,213,177,117,125,193,253,245
+	show2updown:.DB 189,33,174,167,51,151,159,161,191,183
