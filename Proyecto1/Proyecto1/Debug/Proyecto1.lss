@@ -1,5 +1,5 @@
 
-AVRASM ver. 2.2.8  C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.asm Mon Mar 11 09:26:58 2024
+AVRASM ver. 2.2.8  C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.asm Mon Mar 11 10:30:52 2024
 
 [builtin](2): Including file 'C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.7.374\avrasm\inc\m328Pdef.inc'
 C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.asm(11): Including file 'C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.7.374\avrasm\inc\M328PDEF.inc'
@@ -1055,9 +1055,9 @@ C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.a
                                  .org 0x0006						;Pin Change Interrupt Request 0
 000006 940c 00de                 	JMP PCINT0_INT
                                  .org 0x0016						;Compare Match A Timer1
-000016 940c 00e1                 	JMP TIMER1_COMPA
+000016 940c 00e3                 	JMP TIMER1_COMPA
                                  .org 0x001C						;Compare Match A Timer0
-00001c 940c 00df                 	JMP TIMER0_COMPA
+00001c 940c 00e1                 	JMP TIMER0_COMPA
                                  // Reset --------------------------------------------------------- //
                                  START:
                                  // Stack Pointer ----------------------------------------------------
@@ -1092,7 +1092,7 @@ C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.a
 00002e e005                      	LDI R16, (1<<CS02)|(1<<CS00)
 00002f bd05                      	OUT TCCR0B, R16				;Timer0 clock selected >> Prescaler at 1024
                                  	//Timer1
-000030 e002                      	LDI R16, 0x02	
+000030 e002                      	LDI R16, (1<<OCIE1A)	
 000031 9300 006f                 	STS TIMSK1, R16				;Enable Interrupt Mask for Compare Match A Timer1
 000033 e30d                      	LDI R16, 0x3D
 000034 9300 0089                 	STS OCR1AH, R16				;Max for CTC Mode Low Timer1 >> Generates interrrupt1
@@ -1100,7 +1100,7 @@ C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.a
 000037 9300 0088                 	STS OCR1AL, R16				;Max for CTC Mode High Timer1 >> Generates interrrupt1
 000039 2700                      	CLR R16
 00003a 9300 0080                 	STS TCCR1A, R16				;Timer1 mode >> CTC Mode
-00003c e00d                      	LDI R16, 0x0D
+00003c e00d                      	LDI R16, (1<<WGM12)|(1<<CS12)|(1<<CS10)
 00003d 9300 0081                 	STS TCCR1B, R16				;Timer1 Prescaler at 1024 and CTC Settings
 00003f 9478                      	SEI							;Enable all interruptions
                                  	//Inputs and outputs
@@ -1263,86 +1263,88 @@ C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.a
 0000dd 9508                      	RET	
                                  //BUTTONS PIN CHANGE ---------------------------------------------- //
                                  PCINT0_INT:
-0000de 9518                      	RETI
+0000de 992a                      	SBIC PORTB, PB2
+0000df 9a28                      	SBI PORTB, PB0
+0000e0 9518                      	RETI
                                  //CTC ------------------------------------------------------------ //
                                  TIMER0_COMPA:
-0000df 6098                      	SBR dissel, 0x08			;4ms delay
-0000e0 9518                      	RETI
+0000e1 6098                      	SBR dissel, 0x08			;4ms delay
+0000e2 9518                      	RETI
                                  TIMER1_COMPA:
-0000e1 930f                      	PUSH R16					;Save initial conditions
-0000e2 931f                      	PUSH R17
-0000e3 9100 003f                 	LDS R16, SREG
-0000e5 930f                      	PUSH R16
-0000e6 2f04                      	MOV R16, seconds
-0000e7 940e 0122                 	CALL time_inc
-0000e9 2f40                      	MOV seconds, R16
-0000ea 3640                      	CPI seconds, 0x60			;Seconds completes 1 min
-0000eb f581                      	BRNE completeinterrupt
-0000ec 2744                      	CLR seconds					;Restart seconds
-0000ed 2f03                      	MOV R16, minutes
-0000ee 940e 0122                 	CALL time_inc
-0000f0 2f30                      	MOV minutes, R16
-0000f1 3630                      	CPI minutes, 0x60			;Seconds completes 1 hour
-0000f2 f549                      	BRNE completeinterrupt
-0000f3 2733                      	CLR minutes					;Restart minutes
-0000f4 2f02                      	MOV R16, hours
-0000f5 940e 0122                 	CALL time_inc
-0000f7 2f20                      	MOV hours, R16
-0000f8 3224                      	CPI hours, 0x24				;Day complete
-0000f9 f511                      	BRNE completeinterrupt
-0000fa 2722                      	CLR hours					;Restart hours
-0000fb e0f2                      	LDI ZH, HIGH(days_month<<1)	;Redirect to days of month table
-0000fc eae0                      	LDI ZL, LOW(days_month<<1)
-0000fd 0fe6                      	ADD ZL, month				;Correct to the actual month
-0000fe 9104                      	LPM R16, Z					;Max day of month
-0000ff 3062                      	CPI month, 2
-000100 f429                      	BRNE checkmaxofmonth
-000101 2f17                      	MOV R17, year
-000102 7013                      	CBR R17, 0xFC				;Conserve less 2 significant bits
-000103 3010                      	CPI R17, 0					;Check if the number is multiple of four
-000104 f409                      	BRNE checkmaxofmonth
-000105 e209                      	LDI R16, 41					;Max of february/leap_year * 0x29
+0000e3 930f                      	PUSH R16					;Save initial conditions
+0000e4 931f                      	PUSH R17
+0000e5 9100 003f                 	LDS R16, SREG
+0000e7 930f                      	PUSH R16
+0000e8 2f04                      	MOV R16, seconds
+0000e9 940e 0124                 	CALL time_inc
+0000eb 2f40                      	MOV seconds, R16
+0000ec 3640                      	CPI seconds, 0x60			;Seconds completes 1 min
+0000ed f581                      	BRNE completeinterrupt
+0000ee 2744                      	CLR seconds					;Restart seconds
+0000ef 2f03                      	MOV R16, minutes
+0000f0 940e 0124                 	CALL time_inc
+0000f2 2f30                      	MOV minutes, R16
+0000f3 3630                      	CPI minutes, 0x60			;Seconds completes 1 hour
+0000f4 f549                      	BRNE completeinterrupt
+0000f5 2733                      	CLR minutes					;Restart minutes
+0000f6 2f02                      	MOV R16, hours
+0000f7 940e 0124                 	CALL time_inc
+0000f9 2f20                      	MOV hours, R16
+0000fa 3224                      	CPI hours, 0x24				;Day complete
+0000fb f511                      	BRNE completeinterrupt
+0000fc 2722                      	CLR hours					;Restart hours
+0000fd e0f2                      	LDI ZH, HIGH(days_month<<1)	;Redirect to days of month table
+0000fe eae0                      	LDI ZL, LOW(days_month<<1)
+0000ff 0fe6                      	ADD ZL, month				;Correct to the actual month
+000100 9104                      	LPM R16, Z					;Max day of month
+000101 3062                      	CPI month, 2
+000102 f429                      	BRNE checkmaxofmonth
+000103 2f17                      	MOV R17, year
+000104 7013                      	CBR R17, 0xFC				;Conserve less 2 significant bits
+000105 3010                      	CPI R17, 0					;Check if the number is multiple of four
+000106 f409                      	BRNE checkmaxofmonth
+000107 e209                      	LDI R16, 41					;Max of february/leap_year * 0x29
                                  checkmaxofmonth:
-000106 1705                      	CP R16, day					;Compare day to max of each month
-000107 f031                      	BREQ incrementmonth
-000108 2f05                      	MOV R16, day
-000109 940e 0122                 	CALL time_inc
-00010b 2f50                      	MOV day, R16				;Day increment
-00010c 940c 011c                 	JMP completeinterrupt
+000108 1705                      	CP R16, day					;Compare day to max of each month
+000109 f031                      	BREQ incrementmonth
+00010a 2f05                      	MOV R16, day
+00010b 940e 0124                 	CALL time_inc
+00010d 2f50                      	MOV day, R16				;Day increment
+00010e 940c 011e                 	JMP completeinterrupt
                                  incrementmonth:
-00010e e051                      	LDI day, 1					;Start of month
-00010f 306c                      	CPI month, 12
-000110 f019                      	BREQ incrementyear
-000111 9563                      	INC month
-000112 940c 011c                 	JMP completeinterrupt
+000110 e051                      	LDI day, 1					;Start of month
+000111 306c                      	CPI month, 12
+000112 f019                      	BREQ incrementyear
+000113 9563                      	INC month
+000114 940c 011e                 	JMP completeinterrupt
                                  incrementyear:
-000114 e061                      	LDI month, 1				;Start of the year
-000115 2f07                      	MOV R16, year
-000116 940e 0122                 	CALL time_inc
-000118 2f70                      	MOV year, R16
-000119 3a70                      	CPI year, 0xA0				;Max of 2 digits years shown
-00011a f409                      	BRNE completeinterrupt
-00011b 2777                      	CLR year
+000116 e061                      	LDI month, 1				;Start of the year
+000117 2f07                      	MOV R16, year
+000118 940e 0124                 	CALL time_inc
+00011a 2f70                      	MOV year, R16
+00011b 3a70                      	CPI year, 0xA0				;Max of 2 digits years shown
+00011c f409                      	BRNE completeinterrupt
+00011d 2777                      	CLR year
                                  completeinterrupt:
-00011c 910f                      	POP R16
-00011d 9300 003f                 	STS SREG, R16
-00011f 911f                      	POP R17
-000120 910f                      	POP R16	
-000121 9518                      	RETI
+00011e 910f                      	POP R16
+00011f 9300 003f                 	STS SREG, R16
+000121 911f                      	POP R17
+000122 910f                      	POP R16	
+000123 9518                      	RETI
                                  //Timer incrementers
                                  time_inc:
-000122 2f10                      	MOV R17, R16
-000123 701f                      	CBR R17, 0xF0
-000124 3019                      	CPI R17, 9
-000125 f429                      	BRNE normal_increment
-000126 9502                      	SWAP R16
-000127 700f                      	CBR R16, 0xF0
-000128 9503                      	INC R16
-000129 9502                      	SWAP R16
-00012a 9508                      	RET
-                                 normal_increment:
-00012b 9503                      	INC R16
+000124 2f10                      	MOV R17, R16
+000125 701f                      	CBR R17, 0xF0
+000126 3019                      	CPI R17, 9
+000127 f429                      	BRNE normal_increment
+000128 9502                      	SWAP R16
+000129 700f                      	CBR R16, 0xF0
+00012a 9503                      	INC R16
+00012b 9502                      	SWAP R16
 00012c 9508                      	RET
+                                 normal_increment:
+00012d 9503                      	INC R16
+00012e 9508                      	RET
                                  // Data Tables --------------------------------------------------- //
                                  .org 0x150
 000150 3100
@@ -1418,17 +1420,17 @@ ld    :   0 ldd   :   0 ldi   :  39 lds   :   1 lpm   :  14 lsl   :   0
 lsr   :   0 mov   :  20 movw  :   0 mul   :   0 muls  :   0 mulsu :   0 
 neg   :   0 nop   :   0 or    :   0 ori   :   0 out   :  11 pop   :   3 
 push  :   3 rcall :   0 ret   :   6 reti  :   3 rjmp  :   0 rol   :   0 
-ror   :   0 sbc   :   0 sbci  :   0 sbi   :   0 sbic  :   0 sbis  :   0 
+ror   :   0 sbc   :   0 sbci  :   0 sbi   :   1 sbic  :   1 sbis  :   0 
 sbiw  :   0 sbr   :   1 sbrc  :   2 sbrs  :   3 sec   :   0 seh   :   0 
 sei   :   1 sen   :   0 ser   :   0 ses   :   0 set   :   0 sev   :   0 
 sez   :   0 sleep :   0 spm   :   0 st    :   0 std   :   0 sts   :  10 
 sub   :   0 subi  :   0 swap  :   8 tst   :   0 wdr   :   0 
-Instructions used: 27 out of 113 (23.9%)
+Instructions used: 29 out of 113 (25.7%)
 
 "ATmega328P" memory use summary [bytes]:
 Segment   Begin    End      Code   Data   Used    Size   Use%
 ---------------------------------------------------------------
-[.cseg] 0x000000 0x0002e6    558     70    628   32768   1.9%
+[.cseg] 0x000000 0x0002e6    562     70    632   32768   1.9%
 [.dseg] 0x000100 0x000106      0      6      6    2048   0.3%
 [.eseg] 0x000000 0x000000      0      0      0    1024   0.0%
 

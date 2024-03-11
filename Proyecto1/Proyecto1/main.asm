@@ -61,7 +61,7 @@ Setup:
 	LDI R16, (1<<CS02)|(1<<CS00)
 	OUT TCCR0B, R16				;Timer0 clock selected >> Prescaler at 1024
 	//Timer1
-	LDI R16, 0x02	
+	LDI R16, (1<<OCIE1A)	
 	STS TIMSK1, R16				;Enable Interrupt Mask for Compare Match A Timer1
 	LDI R16, 0x3D
 	STS OCR1AH, R16				;Max for CTC Mode Low Timer1 >> Generates interrrupt1
@@ -69,7 +69,7 @@ Setup:
 	STS OCR1AL, R16				;Max for CTC Mode High Timer1 >> Generates interrrupt1
 	CLR R16
 	STS TCCR1A, R16				;Timer1 mode >> CTC Mode
-	LDI R16, 0x0D
+	LDI R16, (1<<WGM12)|(1<<CS12)|(1<<CS10)
 	STS TCCR1B, R16				;Timer1 Prescaler at 1024 and CTC Settings
 	SEI							;Enable all interruptions
 	//Inputs and outputs
@@ -232,6 +232,7 @@ D4_D5:
 	RET	
 //BUTTONS PIN CHANGE ---------------------------------------------- //
 PCINT0_INT:
+	
 	RETI
 //CTC ------------------------------------------------------------ //
 TIMER0_COMPA:

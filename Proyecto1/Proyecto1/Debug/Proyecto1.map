@@ -1,5 +1,5 @@
 
-AVRASM ver. 2.2.8  C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.asm Mon Mar 11 09:26:58 2024
+AVRASM ver. 2.2.8  C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.asm Mon Mar 11 10:30:52 2024
 
 
 EQU  SIGNATURE_000 0000001e
@@ -703,8 +703,8 @@ DSEG settings_month 00000104
 DSEG settings_years 00000105
 CSEG START        0000001e
 CSEG PCINT0_INT   000000de
-CSEG TIMER1_COMPA 000000e1
-CSEG TIMER0_COMPA 000000df
+CSEG TIMER1_COMPA 000000e3
+CSEG TIMER0_COMPA 000000e1
 DEF  display      r13
 DEF  sel_dis      r14
 DEF  hours        r18
@@ -746,10 +746,10 @@ CSEG show2nm      0000015f
 CSEG showupdown   00000164
 CSEG shownormal   00000169
 CSEG show2updown  0000016e
-CSEG time_inc     00000122
-CSEG completeinterrupt 0000011c
+CSEG time_inc     00000124
+CSEG completeinterrupt 0000011e
 CSEG days_month   00000150
-CSEG checkmaxofmonth 00000106
-CSEG incrementmonth 0000010e
-CSEG incrementyear 00000114
-CSEG normal_increment 0000012b
+CSEG checkmaxofmonth 00000108
+CSEG incrementmonth 00000110
+CSEG incrementyear 00000116
+CSEG normal_increment 0000012d
