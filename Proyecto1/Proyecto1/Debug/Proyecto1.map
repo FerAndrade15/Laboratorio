@@ -1,5 +1,5 @@
 
-AVRASM ver. 2.2.8  C:\Users\ferch\Documents\Atmel Studio\7.0\Proyecto1\Proyecto1\main.asm Fri Mar 01 22:59:27 2024
+AVRASM ver. 2.2.8  C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.asm Sun Mar 10 20:44:02 2024
 
 
 EQU  SIGNATURE_000 0000001e
@@ -702,17 +702,49 @@ DSEG settings_days 00000103
 DSEG settings_month 00000104
 DSEG settings_years 00000105
 CSEG START        0000001e
+CSEG TIMER0_COMPA 000000a8
+DEF  display      r13
+DEF  sel_dis      r14
 DEF  hours        r18
 DEF  minutes      r19
 DEF  seconds      r20
-DEF  ten_ms       r21
+DEF  five_ms      r21
 DEF  day          r22
 DEF  month        r23
 DEF  year         r24
+DEF  delmode      r25
 CSEG Setup        00000022
-CSEG Loop         00000032
-CSEG completeinterrupt 0000004e
-CSEG leap_year    0000004a
+CSEG Loop         0000003a
+CSEG modejumps    00000107
+CSEG display_settings 00000048
+CSEG selector     0000010c
+CSEG reset        00000056
+CSEG delay_display_mode 00000057
+CSEG MST          0000005b
+CSEG hours_settings 0000006a
+CSEG minutes1     00000072
+CSEG minutes0     00000079
+CSEG seconds0     0000007f
+CSEG D2           00000099
+CSEG D0_D1        00000094
+CSEG D3           0000009e
+CSEG SDM          00000084
+CSEG ATM          00000086
+CSEG ADM          00000088
+CSEG TS           0000008a
+CSEG DSM          0000008c
+CSEG ATSM         0000008e
+CSEG ADSM         00000090
+CSEG AAM          00000092
+CSEG show2nm      0000010f
+CSEG showupdown   00000114
+CSEG shownormal   00000119
+CSEG D4_D5        000000a3
+CSEG show2updown  0000011e
+CSEG completeinterrupt 000000e8
+CSEG time_inc     000000ee
 CSEG days_month   00000100
-CSEG incrementoftime 0000004d
-CSEG ldays_month  00000106
+CSEG checkmaxofmonth 000000d2
+CSEG incrementmonth 000000da
+CSEG incrementyear 000000e0
+CSEG normal_increment 000000f7

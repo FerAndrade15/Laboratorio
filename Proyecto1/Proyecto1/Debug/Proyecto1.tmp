@@ -1,19 +1,19 @@
 <ASSEMBLER_INFO>
  <VERSION>2.2.8</VERSION>
  <DEVICE>"ATmega328P"</DEVICE>
- <WORKING_DIR>C:\Users\ferch\Documents\Atmel Studio\7.0\Proyecto1\Proyecto1\Debug</WORKING_DIR>
+ <WORKING_DIR>C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\Debug</WORKING_DIR>
  <INCLUDE_PATH>
   <DIR>C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.7.374\avrasm\inc</DIR>
   <DIR>C:\Program Files (x86)\Atmel\Studio\7.0\toolchain\avr8\avrassembler\Include</DIR>
   <DIR></DIR>
  </INCLUDE_PATH>
- <SOURCE_FILE>C:\Users\ferch\Documents\Atmel Studio\7.0\Proyecto1\Proyecto1\main.asm</SOURCE_FILE>
+ <SOURCE_FILE>C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.asm</SOURCE_FILE>
  <INCLUDED_FILES>
   <FILE>C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.7.374\avrasm\inc\m328Pdef.inc</FILE>
   <FILE>C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.7.374\avrasm\inc\M328PDEF.inc</FILE>
  </INCLUDED_FILES>
  <OBJECT_FILES>
-  <FILE>C:\Users\ferch\Documents\Atmel Studio\7.0\Proyecto1\Proyecto1\Debug\Proyecto1.obj</FILE>
+  <FILE>C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\Debug\Proyecto1.obj</FILE>
  </OBJECT_FILES>
  <HEX_FILES>
   <FILE>Proyecto1.hex</FILE>
@@ -23,19 +23,48 @@
   <FILE>Proyecto1.lss</FILE>
  </OUTPUT_FILES>
  <LABELS>
-  <settings_hours><FILE>C:\Users\ferch\Documents\Atmel Studio\7.0\Proyecto1\Proyecto1\main.asm</FILE><LINE>15</LINE></settings_hours>
-  <settings_minutes><FILE>C:\Users\ferch\Documents\Atmel Studio\7.0\Proyecto1\Proyecto1\main.asm</FILE><LINE>16</LINE></settings_minutes>
-  <settings_seconds><FILE>C:\Users\ferch\Documents\Atmel Studio\7.0\Proyecto1\Proyecto1\main.asm</FILE><LINE>17</LINE></settings_seconds>
-  <settings_days><FILE>C:\Users\ferch\Documents\Atmel Studio\7.0\Proyecto1\Proyecto1\main.asm</FILE><LINE>18</LINE></settings_days>
-  <settings_month><FILE>C:\Users\ferch\Documents\Atmel Studio\7.0\Proyecto1\Proyecto1\main.asm</FILE><LINE>19</LINE></settings_month>
-  <settings_years><FILE>C:\Users\ferch\Documents\Atmel Studio\7.0\Proyecto1\Proyecto1\main.asm</FILE><LINE>20</LINE></settings_years>
-  <START><FILE>C:\Users\ferch\Documents\Atmel Studio\7.0\Proyecto1\Proyecto1\main.asm</FILE><LINE>31</LINE></START>
-  <Setup><FILE>C:\Users\ferch\Documents\Atmel Studio\7.0\Proyecto1\Proyecto1\main.asm</FILE><LINE>48</LINE></Setup>
-  <Loop><FILE>C:\Users\ferch\Documents\Atmel Studio\7.0\Proyecto1\Proyecto1\main.asm</FILE><LINE>68</LINE></Loop>
-  <completeinterrupt><FILE>C:\Users\ferch\Documents\Atmel Studio\7.0\Proyecto1\Proyecto1\main.asm</FILE><LINE>98</LINE></completeinterrupt>
-  <leap_year><FILE>C:\Users\ferch\Documents\Atmel Studio\7.0\Proyecto1\Proyecto1\main.asm</FILE><LINE>92</LINE></leap_year>
-  <days_month><FILE>C:\Users\ferch\Documents\Atmel Studio\7.0\Proyecto1\Proyecto1\main.asm</FILE><LINE>140</LINE></days_month>
-  <incrementoftime><FILE>C:\Users\ferch\Documents\Atmel Studio\7.0\Proyecto1\Proyecto1\main.asm</FILE><LINE>96</LINE></incrementoftime>
-  <ldays_month><FILE>C:\Users\ferch\Documents\Atmel Studio\7.0\Proyecto1\Proyecto1\main.asm</FILE><LINE>141</LINE></ldays_month>
+  <settings_hours><FILE>C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.asm</FILE><LINE>14</LINE></settings_hours>
+  <settings_minutes><FILE>C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.asm</FILE><LINE>15</LINE></settings_minutes>
+  <settings_seconds><FILE>C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.asm</FILE><LINE>16</LINE></settings_seconds>
+  <settings_days><FILE>C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.asm</FILE><LINE>17</LINE></settings_days>
+  <settings_month><FILE>C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.asm</FILE><LINE>18</LINE></settings_month>
+  <settings_years><FILE>C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.asm</FILE><LINE>19</LINE></settings_years>
+  <START><FILE>C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.asm</FILE><LINE>27</LINE></START>
+  <TIMER0_COMPA><FILE>C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.asm</FILE><LINE>186</LINE></TIMER0_COMPA>
+  <Setup><FILE>C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.asm</FILE><LINE>45</LINE></Setup>
+  <Loop><FILE>C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.asm</FILE><LINE>71</LINE></Loop>
+  <modejumps><FILE>C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.asm</FILE><LINE>269</LINE></modejumps>
+  <display_settings><FILE>C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.asm</FILE><LINE>87</LINE></display_settings>
+  <selector><FILE>C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.asm</FILE><LINE>270</LINE></selector>
+  <reset><FILE>C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.asm</FILE><LINE>101</LINE></reset>
+  <delay_display_mode><FILE>C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.asm</FILE><LINE>103</LINE></delay_display_mode>
+  <MST><FILE>C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.asm</FILE><LINE>108</LINE></MST>
+  <hours_settings><FILE>C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.asm</FILE><LINE>122</LINE></hours_settings>
+  <minutes1><FILE>C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.asm</FILE><LINE>129</LINE></minutes1>
+  <minutes0><FILE>C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.asm</FILE><LINE>135</LINE></minutes0>
+  <seconds0><FILE>C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.asm</FILE><LINE>140</LINE></seconds0>
+  <D2><FILE>C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.asm</FILE><LINE>167</LINE></D2>
+  <D0_D1><FILE>C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.asm</FILE><LINE>161</LINE></D0_D1>
+  <D3><FILE>C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.asm</FILE><LINE>173</LINE></D3>
+  <SDM><FILE>C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.asm</FILE><LINE>144</LINE></SDM>
+  <ATM><FILE>C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.asm</FILE><LINE>146</LINE></ATM>
+  <ADM><FILE>C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.asm</FILE><LINE>148</LINE></ADM>
+  <TS><FILE>C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.asm</FILE><LINE>150</LINE></TS>
+  <DSM><FILE>C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.asm</FILE><LINE>152</LINE></DSM>
+  <ATSM><FILE>C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.asm</FILE><LINE>154</LINE></ATSM>
+  <ADSM><FILE>C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.asm</FILE><LINE>156</LINE></ADSM>
+  <AAM><FILE>C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.asm</FILE><LINE>158</LINE></AAM>
+  <show2nm><FILE>C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.asm</FILE><LINE>271</LINE></show2nm>
+  <showupdown><FILE>C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.asm</FILE><LINE>272</LINE></showupdown>
+  <shownormal><FILE>C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.asm</FILE><LINE>273</LINE></shownormal>
+  <D4_D5><FILE>C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.asm</FILE><LINE>179</LINE></D4_D5>
+  <show2updown><FILE>C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.asm</FILE><LINE>274</LINE></show2updown>
+  <completeinterrupt><FILE>C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.asm</FILE><LINE>246</LINE></completeinterrupt>
+  <time_inc><FILE>C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.asm</FILE><LINE>253</LINE></time_inc>
+  <days_month><FILE>C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.asm</FILE><LINE>268</LINE></days_month>
+  <checkmaxofmonth><FILE>C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.asm</FILE><LINE>225</LINE></checkmaxofmonth>
+  <incrementmonth><FILE>C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.asm</FILE><LINE>232</LINE></incrementmonth>
+  <incrementyear><FILE>C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.asm</FILE><LINE>238</LINE></incrementyear>
+  <normal_increment><FILE>C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.asm</FILE><LINE>263</LINE></normal_increment>
  </LABELS>
 </ASSEMBLER_INFO>

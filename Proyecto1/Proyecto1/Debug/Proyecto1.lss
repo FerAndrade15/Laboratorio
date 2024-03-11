@@ -1,10 +1,10 @@
 
-AVRASM ver. 2.2.8  C:\Users\ferch\Documents\Atmel Studio\7.0\Proyecto1\Proyecto1\main.asm Fri Mar 01 22:59:27 2024
+AVRASM ver. 2.2.8  C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.asm Sun Mar 10 20:44:02 2024
 
 [builtin](2): Including file 'C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.7.374\avrasm\inc\m328Pdef.inc'
-C:\Users\ferch\Documents\Atmel Studio\7.0\Proyecto1\Proyecto1\main.asm(11): Including file 'C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.7.374\avrasm\inc\M328PDEF.inc'
+C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.asm(11): Including file 'C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.7.374\avrasm\inc\M328PDEF.inc'
 [builtin](2): Including file 'C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.7.374\avrasm\inc\m328Pdef.inc'
-C:\Users\ferch\Documents\Atmel Studio\7.0\Proyecto1\Proyecto1\main.asm(11): Including file 'C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.7.374\avrasm\inc\M328PDEF.inc'
+C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.asm(11): Including file 'C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.7.374\avrasm\inc\M328PDEF.inc'
                                  
                                  //********************************************
                                  
@@ -1040,24 +1040,20 @@ C:\Users\ferch\Documents\Atmel Studio\7.0\Proyecto1\Proyecto1\main.asm(11): Incl
                                  #endif  /* _M328PDEF_INC_ */
                                  
                                  ; ***** END OF FILE ******************************************************
-                                 
                                  .dseg
-                                 .org SRAM_START
+                                 .org (SRAM_START)
 000100                           	settings_hours:		.byte 1
 000101                           	settings_minutes:	.byte 1
 000102                           	settings_seconds:	.byte 1
 000103                           	settings_days:		.byte 1
 000104                           	settings_month:		.byte 1
 000105                           	settings_years:		.byte 1
-                                 
                                  .cseg 
                                  // Interrupt Vectors ------------------------------------------------
-                                 .org 0x00					;Reset
+                                 .org 0x00						;Reset
 000000 940c 001e                 	JMP START
-                                 .org 0x001C					;Compare Match A
-00001c 940c 001e                 	JMP START
-                                 	//JMP TIMER0_COMPA
-                                 
+                                 .org 0x001C						;Compare Match A
+00001c 940c 00a8                 	JMP TIMER0_COMPA
                                  // Reset --------------------------------------------------------- //
                                  START:
                                  // Stack Pointer ----------------------------------------------------
@@ -1065,16 +1061,17 @@ C:\Users\ferch\Documents\Atmel Studio\7.0\Proyecto1\Proyecto1\main.asm(11): Incl
 00001f bf0d                      OUT SPL, R16
 000020 e018                      LDI R17, HIGH(RAMEND)
 000021 bf1e                      OUT SPH, R17
-                                 
                                  //Functional Registers ----------------------------------------------
+                                 .def display= R13
+                                 .def sel_dis= R14
                                  .def hours	= R18
                                  .def minutes= R19
                                  .def seconds= R20
-                                 .def ten_ms	= R21
+                                 .def five_ms= R21
                                  .def day	= R22
                                  .def month	= R23
                                  .def year	= R24
-                                 
+                                 .def delmode= R25
                                  //General Settings --------------------------------------------------
                                  Setup:
 000022 e005                      	LDI R16, 0x05
@@ -1082,103 +1079,258 @@ C:\Users\ferch\Documents\Atmel Studio\7.0\Proyecto1\Proyecto1\main.asm(11): Incl
 000024 e002                      	LDI R16, 0x02	
 000025 bd04                      	OUT TCCR0A, R16				;Timer mode >> CTC Mode
 000026 9300 006e                 	STS TIMSK0, R16				;Enable Interrupt Mask for Compare Match A
-000028 e90c                      	LDI R16, 0x9C
+000028 e40e                      	LDI R16, 0x4E
 000029 bd07                      	OUT OCR0A, R16				;Max for CTC Mode >> Generates interrrupt
 00002a 9478                      	SEI							;Enable all interruptions
-                                 
+                                 	//Inputs and outputs
+00002b 2700                      	CLR R16
+00002c 9300 00c1                 	STS	UCSR0B, R16				;Unable RX y TX for communication
+00002e e30f                      	LDI R16, 0x3F
+00002f b907                      	OUT DDRC, R16				;Set all available PortC as output
+000030 ef0f                      	LDI R16, 0xFF
+000031 b90a                      	OUT DDRD, R16				;Set all PortD as output
                                  	//Setting initial values
-00002b e653                      	LDI ten_ms, 99
-00002c e34b                      	LDI seconds, 59
-00002d e33b                      	LDI minutes, 59
-00002e e127                      	LDI hours, 23
-00002f e061                      	LDI day, 1
-000030 e072                      	LDI month, 2
-000031 e188                      	LDI year, 24
-                                 
+000032 ec57                      	LDI five_ms, 199
+000033 e549                      	LDI seconds, 0x59
+000034 e539                      	LDI minutes, 0x59
+000035 e223                      	LDI hours, 0x23
+000036 e268                      	LDI day, 0x28
+000037 e072                      	LDI month, 2
+000038 e989                      	LDI year, 0x99
+000039 e890                      	LDI delmode, 0x80
                                  //Main loop ---------------------------------------------------------
                                  Loop:
-000032 9553                      	INC ten_ms
-000033 3654                      	CPI ten_ms, 100				;ten_ms equals 1s
-000034 f4c9                      	BRNE completeinterrupt
-000035 2755                      	CLR ten_ms
-000036 9543                      	INC seconds
-000037 334c                      	CPI seconds, 60				;seconds equals 1m
-000038 f4a9                      	BRNE completeinterrupt
-000039 2744                      	CLR seconds
-00003a 9533                      	INC minutes
-00003b 333c                      	CPI minutes, 60				;minutes equals 1h
-00003c f489                      	BRNE completeinterrupt
-00003d 2733                      	CLR minutes
-00003e 9523                      	INC hours
-00003f 3128                      	CPI hours, 24				;day complete
-000040 f469                      	BRNE completeinterrupt
-000041 2722                      	CLR hours
-000042 2f18                      	MOV R17, year
-000043 7013                      	CBR R17, 0xFC
-000044 3010                      	CPI R17, 0
-000045 f021                      	BREQ leap_year				;
-000046 e0f2                      	LDI ZH, HIGH(days_month<<1);
-000047 e0e0                      	LDI ZL, LOW(days_month<<1)
-000048 940c 004d                 	JMP incrementoftime
-                                 leap_year:
-00004a e0f2                      	LDI ZH, HIGH(ldays_month<<1)
-00004b e0ec                      	LDI ZL, LOW(ldays_month<<1)
-00004c 0fe7                      	ADD ZL, month
-                                 incrementoftime:
-00004d 9114                      	LPM R17, Z
+                                 //Settings of Mode
+00003a ff97                      	SBRS delmode, 7				;Check change of display
+00003b 940c 003a                 	JMP Loop
+00003d 2f09                      	MOV R16, delmode
+00003e 700f                      	CBR R16, 0xF0				;Mode code
+00003f 2f19                      	MOV R17, delmode
+000040 9512                      	SWAP R17
+000041 7017                      	CBR R17, 0xF8				;Display selector
+000042 e0f2                      	LDI ZH, HIGH(modejumps<<1)	;Redirect to mode jump's table
+000043 e0ee                      	LDI ZL, LOW(modejumps<<1)
+000044 0fe0                      	ADD ZL, R16
+000045 91e4                      	LPM R30, Z
+000046 27ff                      	CLR R31
+000047 9409                      	IJMP
+                                 //Display assign of selector and value
+                                 display_settings:
+000048 e0f2                      	LDI ZH, HIGH(selector<<1)	;Redirect to selector's values table
+000049 e1e8                      	LDI ZL, LOW(selector<<1)
+00004a 0fe1                      	ADD ZL, R17
+00004b 90e4                      	LPM sel_dis, Z
+00004c b8e8                      	OUT PORTC, sel_dis
+00004d b8db                      	OUT PORTD, display
+00004e 2f09                      	MOV R16, delmode
+00004f 700f                      	CBR R16, 0xF0				;Mode code
+000050 3015                      	CPI R17, 5
+000051 f021                      	BREQ reset
+000052 9513                      	INC R17
+000053 9512                      	SWAP R17
+000054 940c 0057                 	JMP delay_display_mode
+                                 reset:
+000056 2711                      	CLR R17
+                                 delay_display_mode:
+000057 0f01                      	ADD R16, R17
+000058 2f90                      	MOV delmode, R16
+000059 940c 003a                 	JMP Loop
+                                 //Modes
+                                 MST:							;Mode >> Show Time
+00005b 3012                      	CPI R17, 2
+00005c f068                      	BRLO hours_settings
+00005d f0a1                      	BREQ minutes1
+00005e 3013                      	CPI R17, 3
+00005f f0c9                      	BREQ minutes0
+000060 2f04                      	MOV R16, seconds
+000061 ff10                      	SBRS R17, 0
+000062 940c 007f                 	JMP seconds0
+                                 	//seconds1
+000064 9502                      	SWAP R16
+000065 700f                      	CBR R16, 0xF0
+000066 940e 0099                 	CALL D2
+000068 940c 0048                 	JMP display_settings
+                                 	hours_settings:
+00006a 2f02                      		MOV R16, hours
+00006b ff10                      		SBRS R17, 0
+00006c 9502                      		SWAP R16
+00006d 700f                      		CBR R16, 0xF0
+00006e 940e 0094                 		CALL D0_D1
+000070 940c 0048                 		JMP display_settings
+                                 	minutes1:
+000072 2f03                      		MOV R16, minutes
+000073 9502                      		SWAP R16
+000074 700f                      		CBR R16, 0xF0
+000075 940e 0099                 		CALL D2
+000077 940c 0048                 		JMP display_settings
+                                 	minutes0:
+000079 2f03                      		MOV R16, minutes
+00007a 700f                      		CBR R16, 0xF0
+00007b 940e 009e                 		CALL D3
+00007d 940c 0048                 		JMP display_settings	
+                                 	seconds0:
+00007f 700f                      		CBR R16, 0xF0
+000080 940e 009e                 		CALL D3
+000082 940c 0048                 		JMP display_settings
+                                 SDM:
+000084 940c 003a                 	JMP Loop
+                                 ATM:
+000086 940c 003a                 	JMP Loop
+                                 ADM:
+000088 940c 003a                 	JMP Loop
+                                 TS:
+00008a 940c 003a                 	JMP Loop
+                                 DSM:
+00008c 940c 003a                 	JMP Loop
+                                 ATSM:
+00008e 940c 003a                 	JMP Loop
+                                 ADSM:
+000090 940c 003a                 	JMP Loop
+                                 AAM:
+000092 940c 003a                 	JMP Loop
+                                 //Subroutines
+                                 D0_D1:
+000094 e0f2                      	LDI ZH, HIGH(show2nm<<1)	;Redirect to displayed value
+000095 e1ee                      	LDI ZL, LOW(show2nm<<1)
+000096 0fe0                      	ADD ZL, R16
+000097 90d4                      	LPM display, Z
+000098 9508                      	RET
+                                 D2:
+000099 e0f2                      	LDI ZH, HIGH(showupdown<<1)	;Redirect to displayed value
+00009a e2e8                      	LDI ZL, LOW(showupdown<<1)
+00009b 0fe0                      	ADD ZL, R16
+00009c 90d4                      	LPM display, Z
+00009d 9508                      	RET
+                                 D3:
+00009e e0f2                      	LDI ZH, HIGH(shownormal<<1)	;Redirect to displayed value
+00009f e3e2                      	LDI ZL, LOW(shownormal<<1)
+0000a0 0fe0                      	ADD ZL, R16
+0000a1 90d4                      	LPM display, Z
+0000a2 9508                      	RET
+                                 D4_D5:
+0000a3 e0f2                      	LDI ZH, HIGH(show2updown<<1)	;Redirect to displayed value
+0000a4 e3ec                      	LDI ZL, LOW(show2updown<<1)
+0000a5 0fe0                      	ADD ZL, R16
+0000a6 90d4                      	LPM display, Z
+0000a7 9508                      	RET	
+                                 //CTC ------------------------------------------------------------ //
+                                 TIMER0_COMPA:	
+0000a8 930f                      	PUSH R16					;Save initial conditions
+0000a9 931f                      	PUSH R17
+0000aa 9100 003f                 	LDS R16, SREG
+0000ac 930f                      	PUSH R16
+0000ad 9553                      	INC five_ms					;Time counter increment
+0000ae 6890                      	SBR delmode, 0x80			;5ms delay
+0000af 3c58                      	CPI five_ms, 200			;Five_ms equals 1s
+0000b0 f5b9                      	BRNE completeinterrupt
+0000b1 2755                      	CLR five_ms					;Restart five_ms
+0000b2 2f04                      	MOV R16, seconds
+0000b3 940e 00ee                 	CALL time_inc
+0000b5 2f40                      	MOV seconds, R16
+0000b6 3640                      	CPI seconds, 0x60			;Seconds completes 1 min
+0000b7 f581                      	BRNE completeinterrupt
+0000b8 2744                      	CLR seconds					;Restart seconds
+0000b9 2f03                      	MOV R16, minutes
+0000ba 940e 00ee                 	CALL time_inc
+0000bc 2f30                      	MOV minutes, R16
+0000bd 3630                      	CPI minutes, 0x60			;Seconds completes 1 hour
+0000be f549                      	BRNE completeinterrupt
+0000bf 2733                      	CLR minutes					;Restart minutes
+0000c0 2f02                      	MOV R16, hours
+0000c1 940e 00ee                 	CALL time_inc
+0000c3 2f20                      	MOV hours, R16
+0000c4 3224                      	CPI hours, 0x24				;Day complete
+0000c5 f511                      	BRNE completeinterrupt
+0000c6 2722                      	CLR hours					;Restart hours
+0000c7 e0f2                      	LDI ZH, HIGH(days_month<<1)	;Redirect to days of month table
+0000c8 e0e0                      	LDI ZL, LOW(days_month<<1)
+0000c9 0fe7                      	ADD ZL, month				;Correct to the actual month
+0000ca 9104                      	LPM R16, Z					;Max day of month
+0000cb 3072                      	CPI month, 2
+0000cc f429                      	BRNE checkmaxofmonth
+0000cd 2f18                      	MOV R17, year
+0000ce 7013                      	CBR R17, 0xFC				;Conserve less 2 significant bits
+0000cf 3010                      	CPI R17, 0					;Check if the number is multiple of four
+0000d0 f409                      	BRNE checkmaxofmonth
+0000d1 e209                      	LDI R16, 41					;Max of february/leap_year * 0x29
+                                 checkmaxofmonth:
+0000d2 1706                      	CP R16, day					;Compare day to max of each month
+0000d3 f031                      	BREQ incrementmonth
+0000d4 2f06                      	MOV R16, day
+0000d5 940e 00ee                 	CALL time_inc
+0000d7 2f60                      	MOV day, R16				;Day increment
+0000d8 940c 00e8                 	JMP completeinterrupt
+                                 incrementmonth:
+0000da e061                      	LDI day, 1					;Start of month
+0000db 307c                      	CPI month, 12
+0000dc f019                      	BREQ incrementyear
+0000dd 9573                      	INC month
+0000de 940c 00e8                 	JMP completeinterrupt
+                                 incrementyear:
+0000e0 e071                      	LDI month, 1				;Start of the year
+0000e1 2f08                      	MOV R16, year
+0000e2 940e 00ee                 	CALL time_inc
+0000e4 2f80                      	MOV year, R16
+0000e5 3a80                      	CPI year, 0xA0				;Max of 2 digits years shown
+0000e6 f409                      	BRNE completeinterrupt
+0000e7 2788                      	CLR year
                                  completeinterrupt:
-00004e fd50                      	SBRC ten_ms, PB0
-00004f 940c 0032                 	JMP Loop
-                                 	//Display
-000051 940c 0032                 	JMP Loop
-                                 
-                                 // CTC ----------------------------------------------------------- //
-                                 /*TIMER0_COMPA:	
-                                 	INC ten_ms
-                                 	CPI ten_ms, 100			;ten_ms equals 1s
-                                 	BRNE completeinterrupt
-                                 	CLR ten_ms
-                                 	INC seconds
-                                 	CPI seconds, 60			;seconds equals 1m
-                                 	BRNE completeinterrupt
-                                 	CLR seconds
-                                 	INC minutes
-                                 	CPI minutes, 60			;minutes equals 1h
-                                 	BRNE completeinterrupt
-                                 	CLR minutes
-                                 	INC hours
-                                 	CPI hours, 24			;day complete
-                                 	BRNE completeinterrupt
-                                 	CLR hours
-                                 	MOV R17, year
-                                 	CBR R17, 0xFC
-                                 	CPI R17, 0
-                                 	BREQ leap_year
-                                 	LDI ZH, HIGH(days_month<<1)
-                                 	LDI ZL, LOW(days_month<<1)
-                                 	JMP incrementoftime
-                                 leap_year:
-                                 	LDI ZH, HIGH(ldays_month<<1)
-                                 	LDI ZL, LOW(ldays_month<<1)
-                                 incrementoftime:
-                                 	CLR R17
-                                 completeinterrupt:
-                                 	RETI*/
-                                 
+0000e8 910f                      	POP R16
+0000e9 9300 003f                 	STS SREG, R16
+0000eb 911f                      	POP R17
+0000ec 910f                      	POP R16	
+0000ed 9518                      	RETI
+                                 //Timer incrementers
+                                 time_inc:
+0000ee 2f10                      	MOV R17, R16
+0000ef 701f                      	CBR R17, 0xF0
+0000f0 3019                      	CPI R17, 9
+0000f1 f429                      	BRNE normal_increment
+0000f2 9502                      	SWAP R16
+0000f3 700f                      	CBR R16, 0xF0
+0000f4 9503                      	INC R16
+0000f5 9502                      	SWAP R16
+0000f6 9508                      	RET
+                                 normal_increment:
+0000f7 9503                      	INC R16
+0000f8 9508                      	RET
+                                 // Data Tables --------------------------------------------------- //
                                  .org 0x100
-                                 	//ncode_numbers:		.DB 252,96,218,242,102,182,190,224,254,246			;10 bytes
-                                 	//ucode_numbers:		.DB 252,12,218,158,46,246,28,254,190				;10 bytes
-000100 1c1f
-000101 1e1f
-000102 1e1f
-000103 1f1f
-000104 1f1e
-000105 1f1e                          days_month:			.DB 31,28,31,30,31,30,31,31,30,31,30,31			;12 bytes	
-000106 1d1f
-000107 1e1f
-000108 1e1f
-000109 1f1f
-00010a 1f1e
+000100 3100
+000101 3128
+000102 3130
+000103 3130
+000104 3031
+000105 3031
+000106 0031                      	days_month:	.DB 0,49,40,49,48,49,48,49,49,48,49,48,49,0
+000107 845b
+000108 8886
+000109 8c8a
+00010a 908e
+00010b 0092                      	modejumps:	.DB MST,SDM,ATM,ADM,TS,DSM,ATSM,ADSM,AAM,0
+00010c 0201
+00010d 0804
+00010e 2010                      	selector:	.DB 1,2,4,8,16,32
+00010f 81eb
+000110 d9da
+000111 79b1
+000112 c17b
+000113 f9fb                      	show2nm:	.DB 235,129,218,217,177,121,123,193,251,249
+000114 28ee
+000115 6dcd
+000116 672b
+000117 2ce7
+000118 6fef                      	showupdown:	.DB 238,40,205,109,43,103,231,44,239,111
+000119 82ee
+00011a d6dc
+00011b 76b2
+00011c c27e
+00011d f6fe                      	shownormal:	.DB 238,130,220,214,178,118,126,194,254,246
+00011e 18be
+00011f 9dad
+000120 971b
+000121 1cb7
+000122 9fbf                      	show2updown:.DB 190,24,173,157,27,151,183,28,191,159
 
 
 RESOURCE USE INFORMATION
@@ -1196,39 +1348,39 @@ counted separately from r26..r31 here.
 .dseg memory usage only counts static data declared with .byte
 
 "ATmega328P" register use summary:
-x  :   0 y  :   0 z  :   1 r0 :   0 r1 :   0 r2 :   0 r3 :   0 r4 :   0 
+x  :   0 y  :   0 z  :   7 r0 :   0 r1 :   0 r2 :   0 r3 :   0 r4 :   0 
 r5 :   0 r6 :   0 r7 :   0 r8 :   0 r9 :   0 r10:   0 r11:   0 r12:   0 
-r13:   0 r14:   0 r15:   0 r16:   9 r17:   6 r18:   4 r19:   4 r20:   4 
-r21:   5 r22:   1 r23:   2 r24:   2 r25:   0 r26:   0 r27:   0 r28:   0 
-r29:   0 r30:   3 r31:   2 
-Registers used: 12 out of 35 (34.3%)
+r13:   5 r14:   2 r15:   0 r16:  63 r17:  23 r18:   6 r19:   7 r20:   6 
+r21:   4 r22:   5 r23:   6 r24:   6 r25:   7 r26:   0 r27:   0 r28:   0 
+r29:   0 r30:  15 r31:   8 
+Registers used: 15 out of 35 (42.9%)
 
 "ATmega328P" instruction use summary:
-.lds  :   0 .sts  :   0 adc   :   0 add   :   1 adiw  :   0 and   :   0 
+.lds  :   0 .sts  :   0 adc   :   0 add   :   8 adiw  :   0 and   :   0 
 andi  :   0 asr   :   0 bclr  :   0 bld   :   0 brbc  :   0 brbs  :   0 
-brcc  :   0 brcs  :   0 break :   0 breq  :   1 brge  :   0 brhc  :   0 
-brhs  :   0 brid  :   0 brie  :   0 brlo  :   0 brlt  :   0 brmi  :   0 
-brne  :   4 brpl  :   0 brsh  :   0 brtc  :   0 brts  :   0 brvc  :   0 
-brvs  :   0 bset  :   0 bst   :   0 call  :   0 cbi   :   0 cbr   :   1 
-clc   :   0 clh   :   0 cli   :   0 cln   :   0 clr   :   4 cls   :   0 
-clt   :   0 clv   :   0 clz   :   0 com   :   0 cp    :   0 cpc   :   0 
-cpi   :   5 cpse  :   0 dec   :   0 eor   :   0 fmul  :   0 fmuls :   0 
-fmulsu:   0 icall :   0 ijmp  :   0 in    :   0 inc   :   4 jmp   :   5 
-ld    :   0 ldd   :   0 ldi   :  16 lds   :   0 lpm   :   2 lsl   :   0 
-lsr   :   0 mov   :   1 movw  :   0 mul   :   0 muls  :   0 mulsu :   0 
-neg   :   0 nop   :   0 or    :   0 ori   :   0 out   :   5 pop   :   0 
-push  :   0 rcall :   0 ret   :   0 reti  :   0 rjmp  :   0 rol   :   0 
+brcc  :   0 brcs  :   0 break :   0 breq  :   5 brge  :   0 brhc  :   0 
+brhs  :   0 brid  :   0 brie  :   0 brlo  :   1 brlt  :   0 brmi  :   0 
+brne  :   8 brpl  :   0 brsh  :   0 brtc  :   0 brts  :   0 brvc  :   0 
+brvs  :   0 bset  :   0 bst   :   0 call  :  10 cbi   :   0 cbr   :  11 
+clc   :   0 clh   :   0 cli   :   0 cln   :   0 clr   :   8 cls   :   0 
+clt   :   0 clv   :   0 clz   :   0 com   :   0 cp    :   1 cpc   :   0 
+cpi   :  12 cpse  :   0 dec   :   0 eor   :   0 fmul  :   0 fmuls :   0 
+fmulsu:   0 icall :   0 ijmp  :   1 in    :   0 inc   :   5 jmp   :  21 
+ld    :   0 ldd   :   0 ldi   :  32 lds   :   1 lpm   :  14 lsl   :   0 
+lsr   :   0 mov   :  20 movw  :   0 mul   :   0 muls  :   0 mulsu :   0 
+neg   :   0 nop   :   0 or    :   0 ori   :   0 out   :   9 pop   :   3 
+push  :   3 rcall :   0 ret   :   6 reti  :   1 rjmp  :   0 rol   :   0 
 ror   :   0 sbc   :   0 sbci  :   0 sbi   :   0 sbic  :   0 sbis  :   0 
-sbiw  :   0 sbr   :   0 sbrc  :   1 sbrs  :   0 sec   :   0 seh   :   0 
+sbiw  :   0 sbr   :   1 sbrc  :   0 sbrs  :   3 sec   :   0 seh   :   0 
 sei   :   1 sen   :   0 ser   :   0 ses   :   0 set   :   0 sev   :   0 
-sez   :   0 sleep :   0 spm   :   0 st    :   0 std   :   0 sts   :   1 
-sub   :   0 subi  :   0 swap  :   0 tst   :   0 wdr   :   0 
-Instructions used: 15 out of 113 (13.3%)
+sez   :   0 sleep :   0 spm   :   0 st    :   0 std   :   0 sts   :   3 
+sub   :   0 subi  :   0 swap  :   7 tst   :   0 wdr   :   0 
+Instructions used: 26 out of 113 (23.0%)
 
 "ATmega328P" memory use summary [bytes]:
 Segment   Begin    End      Code   Data   Used    Size   Use%
 ---------------------------------------------------------------
-[.cseg] 0x000000 0x000218    114     24    138   32768   0.4%
+[.cseg] 0x000000 0x000246    446     70    516   32768   1.6%
 [.dseg] 0x000100 0x000106      0      6      6    2048   0.3%
 [.eseg] 0x000000 0x000000      0      0      0    1024   0.0%
 
