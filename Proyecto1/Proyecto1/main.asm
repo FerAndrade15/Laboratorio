@@ -35,8 +35,20 @@ OUT SPL, R16
 LDI R17, HIGH(RAMEND)
 OUT SPH, R17
 //Functional Registers ----------------------------------------------
-.def display= R13
-.def sel_dis= R14
+.def ahours	= R1
+.def amins	= R2
+.def asecs	= R3
+.def aday	= R4
+.def amonth	= R5
+.def ayear	= R6
+.def shours	= R7
+.def smins	= R8
+.def ssecs	= R9
+.def sdays	= R10
+.def smonth	= R11
+.def syear	= R12
+.def delay	= R13
+.def display= R14
 .def hours	= R18
 .def minutes= R19
 .def seconds= R20
@@ -79,8 +91,8 @@ Setup:
 	OUT DDRC, R16				;Set all available PortC as output
 	LDI R16, 0xFF
 	OUT DDRD, R16				;Set all PortD as output
-	LDI R16, 0x03
-	OUT DDRB, R16				;Set as outputs PB0&PB1 for led mode
+	LDI R16, 0x23
+	OUT DDRB, R16				;Set as outputs PB0&PB1&PB5 for led mode
 	LDI R16, 0x1C					
 	OUT PORTB, R16				;Buttons pull-ups			
 	//Setting initial values
@@ -91,6 +103,16 @@ Setup:
 	LDI month, 2
 	LDI year, 0x24
 	LDI dissel, 0x08
+	CLR R16
+	MOV ahours, R16
+	MOV amins, R16
+	MOV asecs, R16
+	LDI R16, 0x29
+	MOV aday, R16
+	LDI R16, 5
+	MOV amonth, R16
+	LDI R16, 24
+	MOV ayear, R16
 //Main loop ---------------------------------------------------------
 Loop:
 //Settings of Mode
@@ -108,8 +130,8 @@ display_settings:
 	LDI ZH, HIGH(selector<<1)	;Redirect to selector's values table
 	LDI ZL, LOW(selector<<1)
 	ADD ZL, dissel
-	LPM sel_dis, Z
-	OUT PORTC, sel_dis
+	LPM R16, Z
+	OUT PORTC, R16
 	OUT PORTD, display
 	CPI dissel, 5
 	BREQ reset
@@ -120,6 +142,7 @@ reset:
 	JMP Loop
 //Modes
 MST:							;Mode >> Show Time
+	SBI PORTB, PB0
 	CPI dissel, 2
 	BRLO hours_settings
 	BREQ minutes1
@@ -156,6 +179,7 @@ MST:							;Mode >> Show Time
 		CALL D4_D5
 		JMP display_settings
 SDM:							;Mode >> Show Date
+	SBI PORTB, PB1
 	CPI dissel, 2
 	BRLO days_settings
 	BREQ month1
@@ -191,12 +215,85 @@ SDM:							;Mode >> Show Date
 		CBR R16, 0xF0
 		CALL D4_D5
 		JMP display_settings
-ATM:
-	JMP Loop
-ADM:
-	JMP Loop
+ATM:							;Mode >> Show Alarm Time
+	SBI PORTB, PB5
+	CPI dissel, 2
+	BRLO ahours_settings
+	BREQ amins1
+	CPI dissel, 3
+	BREQ amins0
+	MOV R16, seconds
+	SBRC dissel, 0
+	JMP aseconds0
+	//seconds1
+	SWAP R16
+	CBR R16, 0xF0
+	CALL D4_D5
+	JMP display_settings
+	ahours_settings:
+		MOV R16, ahours
+		SBRS dissel, 0
+		SWAP R16
+		CBR R16, 0xF0
+		CALL D0_D1
+		JMP display_settings
+	amins1:
+		MOV R16, amins
+		SWAP R16
+		CBR R16, 0xF0
+		CALL D2
+		JMP display_settings
+	amins0:
+		MOV R16, amins
+		CBR R16, 0xF0
+		CALL D3
+		JMP display_settings	
+	aseconds0:
+		CBR R16, 0xF0
+		CALL D4_D5
+		JMP display_settings
+ADM:							;Mode >> Show Alarm Date
+	SBI PORTB, PB5
+	CPI dissel, 2
+	BRLO adays_settings
+	BREQ amonth1
+	CPI dissel, 3
+	BREQ amonth0
+	MOV R16, ayear
+	SBRC dissel, 0
+	JMP ayear0
+	//year1
+	SWAP R16
+	CBR R16, 0xF0
+	CALL D4_D5
+	JMP display_settings
+	adays_settings:
+		MOV R16, aday
+		SBRS dissel, 0
+		SWAP R16
+		CBR R16, 0xF0
+		CALL D0_D1
+		JMP display_settings
+	amonth1:
+		MOV R16, amonth
+		SWAP R16
+		CBR R16, 0xF0
+		CALL D2
+		JMP display_settings
+	amonth0:
+		MOV R16, month
+		CBR R16, 0xF0
+		CALL D3
+		JMP display_settings	
+	ayear0:
+		CBR R16, 0xF0
+		CALL D4_D5
+		JMP display_settings
 TS:
-	JMP Loop
+	MOV R16, seconds
+	CBR R16, 0xF0
+	CALL D3
+	JMP display_settings
 DSM:
 	JMP Loop
 ATSM:
@@ -232,12 +329,71 @@ D4_D5:
 	RET	
 //BUTTONS PIN CHANGE ---------------------------------------------- //
 PCINT0_INT:
-	
+	PUSH R16					;Save initial conditions
+	PUSH R17
+	LDS R16, SREG
+	PUSH R16
+	IN R16, PINB
+	CBR R16, 0xE3
+	CPI R16, 0x1C
+	BREQ completepcint
+	CPI mode, 4
+	BRLO changemodes
+completepcint:
+	POP R16
+	STS SREG, R16
+	POP R17
+	POP R16	
 	RETI
-//CTC ------------------------------------------------------------ //
+changemodes:
+	SBRS R16, PB4
+	JMP completepcint
+	SBRS R16, PB3
+	JMP changeshownmode
+	//Get into settings
+	LDI R17, 0x04
+	ADD mode, R17
+	CBR mode, 0xF0
+	JMP completepcint
+changeshownmode:
+	CBI PORTB, PB0
+	CBI PORTB, PB1
+	CBI PORTB, PB5
+	CPI mode, 3
+	BREQ resetmode
+	INC mode
+	JMP completepcint
+resetmode:
+	CLR mode
+	JMP completepcint
+//CTC TIMER0 ----------------------------------------------------- //
 TIMER0_COMPA:
+	PUSH R16					;Save initial conditions
+	PUSH R17
+	LDS R16, SREG
+	PUSH R16
 	SBR dissel, 0x08			;4ms delay
+	SBRC delay, 7
+	JMP buttondelay
+completetimer0int:
+	POP R16
+	STS SREG, R16
+	POP R17
+	POP R16	
 	RETI
+buttondelay:
+	MOV R16, delay
+	CPI R16, 0x8F
+	BREQ enablebutton
+	INC delay
+	JMP completetimer0int
+enablebutton:
+	CLR R16
+	MOV delay, R16
+	LDI R16, (1<<PCINT4)|(1<<PCINT3)|(1<<PCINT2)
+	STS PCMSK0, R16				;Enable Pin Change on PB4, PB3 and PB2
+	JMP completetimer0int	
+//CTC TIMER1 ----------------------------------------------------- //
 TIMER1_COMPA:
 	PUSH R16					;Save initial conditions
 	PUSH R17
@@ -247,19 +403,19 @@ TIMER1_COMPA:
 	CALL time_inc
 	MOV seconds, R16
 	CPI seconds, 0x60			;Seconds completes 1 min
-	BRNE completeinterrupt
+	BRNE completetimer1int
 	CLR seconds					;Restart seconds
 	MOV R16, minutes
 	CALL time_inc
 	MOV minutes, R16
 	CPI minutes, 0x60			;Seconds completes 1 hour
-	BRNE completeinterrupt
+	BRNE completetimer1int
 	CLR minutes					;Restart minutes
 	MOV R16, hours
 	CALL time_inc
 	MOV hours, R16
 	CPI hours, 0x24				;Day complete
-	BRNE completeinterrupt
+	BRNE completetimer1int
 	CLR hours					;Restart hours
 	LDI ZH, HIGH(days_month<<1)	;Redirect to days of month table
 	LDI ZL, LOW(days_month<<1)
@@ -278,22 +434,22 @@ checkmaxofmonth:
 	MOV R16, day
 	CALL time_inc
 	MOV day, R16				;Day increment
-	JMP completeinterrupt
+	JMP completetimer1int
 incrementmonth:
 	LDI day, 1					;Start of month
 	CPI month, 12
 	BREQ incrementyear
 	INC month
-	JMP completeinterrupt
+	JMP completetimer1int
 incrementyear:
 	LDI month, 1				;Start of the year
 	MOV R16, year
 	CALL time_inc
 	MOV year, R16
 	CPI year, 0xA0				;Max of 2 digits years shown
-	BRNE completeinterrupt
+	BRNE completetimer1int
 	CLR year
-completeinterrupt:
+completetimer1int:
 	POP R16
 	STS SREG, R16
 	POP R17
@@ -314,7 +470,7 @@ normal_increment:
 	INC R16
 	RET
 // Data Tables --------------------------------------------------- //
-.org 0x150
+.org 0x200
 	days_month:	.DB 0,49,40,49,48,49,48,49,49,48,49,48,49,0
 	modejumps:	.DB MST,SDM,ATM,ADM,TS,DSM,ATSM,ADSM,AAM,0
 	selector:	.DB 1,2,4,8,16,32
