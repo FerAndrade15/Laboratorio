@@ -9,14 +9,6 @@
 //********************************************
 // Encabezado -------------------------------------------------------
 .include "M328PDEF.inc"
-.dseg
-.org (SRAM_START)
-	settings_hours:		.byte 1
-	settings_minutes:	.byte 1
-	settings_seconds:	.byte 1
-	settings_days:		.byte 1
-	settings_month:		.byte 1
-	settings_years:		.byte 1
 .cseg 
 // Interrupt Vectors ------------------------------------------------
 .org 0x00						;Reset
@@ -49,6 +41,7 @@ OUT SPH, R17
 .def syear	= R12
 .def delay	= R13
 .def display= R14
+.def movdsl = R15
 .def hours	= R18
 .def minutes= R19
 .def seconds= R20
@@ -113,6 +106,8 @@ Setup:
 	MOV amonth, R16
 	LDI R16, 24
 	MOV ayear, R16
+	LDI R16, 1
+	MOV movdsl, R16
 //Main loop ---------------------------------------------------------
 Loop:
 //Settings of Mode
@@ -123,7 +118,12 @@ Loop:
 	LDI ZL, LOW(modejumps<<1)
 	ADD ZL, mode
 	LPM R30, Z
+	CPI mode, 4
+	BRGE doublebyte
 	CLR R31
+	IJMP
+doublebyte:
+	LDI R31, 1
 	IJMP
 //Display assign of selector and value
 display_settings:
@@ -132,7 +132,9 @@ display_settings:
 	ADD ZL, dissel
 	LPM R16, Z
 	OUT PORTC, R16
-	OUT PORTD, display
+	OUT PORTD, display		
+	JMP completedisplay
+completedisplay:
 	CPI dissel, 5
 	BREQ reset
 	INC dissel
@@ -158,21 +160,15 @@ MST:							;Mode >> Show Time
 	JMP display_settings
 	hours_settings:
 		MOV R16, hours
-		SBRS dissel, 0
-		SWAP R16
-		CBR R16, 0xF0
 		CALL D0_D1
 		JMP display_settings
 	minutes1:
-		MOV R16, minutes
-		SWAP R16
-		CBR R16, 0xF0
-		CALL D2
+		MOV R16, seconds
+		CALL D3
 		JMP display_settings
 	minutes0:
-		MOV R16, minutes
-		CBR R16, 0xF0
-		CALL D3
+		MOV R16, seconds
+		CALL D2
 		JMP display_settings	
 	seconds0:
 		CBR R16, 0xF0
@@ -195,20 +191,14 @@ SDM:							;Mode >> Show Date
 	JMP display_settings
 	days_settings:
 		MOV R16, day
-		SBRS dissel, 0
-		SWAP R16
-		CBR R16, 0xF0
 		CALL D0_D1
 		JMP display_settings
 	month1:
 		MOV R16, month
-		SWAP R16
-		CBR R16, 0xF0
 		CALL D2
 		JMP display_settings
 	month0:
 		MOV R16, month
-		CBR R16, 0xF0
 		CALL D3
 		JMP display_settings	
 	year0:
@@ -222,7 +212,7 @@ ATM:							;Mode >> Show Alarm Time
 	BREQ amins1
 	CPI dissel, 3
 	BREQ amins0
-	MOV R16, seconds
+	MOV R16, asecs
 	SBRC dissel, 0
 	JMP aseconds0
 	//seconds1
@@ -232,20 +222,14 @@ ATM:							;Mode >> Show Alarm Time
 	JMP display_settings
 	ahours_settings:
 		MOV R16, ahours
-		SBRS dissel, 0
-		SWAP R16
-		CBR R16, 0xF0
 		CALL D0_D1
 		JMP display_settings
 	amins1:
 		MOV R16, amins
-		SWAP R16
-		CBR R16, 0xF0
 		CALL D2
 		JMP display_settings
 	amins0:
 		MOV R16, amins
-		CBR R16, 0xF0
 		CALL D3
 		JMP display_settings	
 	aseconds0:
@@ -269,31 +253,50 @@ ADM:							;Mode >> Show Alarm Date
 	JMP display_settings
 	adays_settings:
 		MOV R16, aday
-		SBRS dissel, 0
-		SWAP R16
-		CBR R16, 0xF0
 		CALL D0_D1
 		JMP display_settings
 	amonth1:
 		MOV R16, amonth
-		SWAP R16
-		CBR R16, 0xF0
 		CALL D2
 		JMP display_settings
 	amonth0:
-		MOV R16, month
-		CBR R16, 0xF0
+		MOV R16, amonth
 		CALL D3
 		JMP display_settings	
 	ayear0:
 		CBR R16, 0xF0
 		CALL D4_D5
 		JMP display_settings
-TS:
-	MOV R16, seconds
+TS:								;Mode >> Time Settings
+	CPI dissel, 2
+	BRLO shours_settings
+	BREQ sminutes1
+	CPI dissel, 3
+	BREQ sminutes0
+	MOV R16, ssecs
+	SBRC dissel, 0
+	JMP sseconds0
+	//seconds1
+	SWAP R16
 	CBR R16, 0xF0
-	CALL D3
+	CALL D4_D5
 	JMP display_settings
+	shours_settings:
+		MOV R16, shours
+		CALL D0_D1
+		JMP display_settings
+	sminutes1:
+		MOV R16, smins
+		CALL D2
+		JMP display_settings
+	sminutes0:
+		MOV R16, smins
+		CALL D3
+		JMP display_settings	
+	sseconds0:
+		CBR R16, 0xF0
+		CALL D4_D5
+		JMP display_settings
 DSM:
 	JMP Loop
 ATSM:
@@ -302,20 +305,27 @@ ADSM:
 	JMP Loop
 AAM:
 	JMP Loop
+
 //Subroutines
 D0_D1:
+	SBRS dissel, 0
+	SWAP R16
+	CBR R16, 0xF0
 	LDI ZH, HIGH(show2nm<<1)	;Redirect to displayed value
 	LDI ZL, LOW(show2nm<<1)
 	ADD ZL, R16
 	LPM display, Z
 	RET
 D2:
+	SWAP R16
+	CBR R16, 0xF0
 	LDI ZH, HIGH(showupdown<<1)	;Redirect to displayed value
 	LDI ZL, LOW(showupdown<<1)
 	ADD ZL, R16
 	LPM display, Z
 	RET
 D3:
+	CBR R16, 0xF0
 	LDI ZH, HIGH(shownormal<<1)	;Redirect to displayed value
 	LDI ZL, LOW(shownormal<<1)
 	ADD ZL, R16
@@ -333,28 +343,20 @@ PCINT0_INT:
 	PUSH R17
 	LDS R16, SREG
 	PUSH R16
-	IN R16, PINB
+	IN R16, PINB				
 	CBR R16, 0xE3
 	CPI R16, 0x1C
 	BREQ completepcint
 	CPI mode, 4
 	BRLO changemodes
-completepcint:
-	POP R16
-	STS SREG, R16
-	POP R17
-	POP R16	
-	RETI
+	BRGE setnewvalues
 changemodes:
 	SBRS R16, PB4
 	JMP completepcint
 	SBRS R16, PB3
 	JMP changeshownmode
-	//Get into settings
-	LDI R17, 0x04
-	ADD mode, R17
-	CBR mode, 0xF0
-	JMP completepcint
+	SBRS R16, PB2
+	JMP intosettings
 changeshownmode:
 	CBI PORTB, PB0
 	CBI PORTB, PB1
@@ -362,38 +364,52 @@ changeshownmode:
 	CPI mode, 3
 	BREQ resetmode
 	INC mode
+	LDI R16, 0x80
+	MOV delay, R16
 	JMP completepcint
 resetmode:
 	CLR mode
 	JMP completepcint
-//CTC TIMER0 ----------------------------------------------------- //
-TIMER0_COMPA:
-	PUSH R16					;Save initial conditions
-	PUSH R17
-	LDS R16, SREG
-	PUSH R16
-	SBR dissel, 0x08			;4ms delay
-	SBRC delay, 7
-	JMP buttondelay
-completetimer0int:
+intosettings:
+	CBI PORTB, PB0
+	CBI PORTB, PB1
+	CBI PORTB, PB5
+	LDI R17, 4 
+	ADD mode, R17
+	CBR mode, 0xF0
+	CPI mode, 4
+	BREQ copytime
+	CPI mode, 5
+	BREQ copydate
+	JMP completepcint
+copytime:
+	MOV shours, hours
+	MOV smins, minutes
+	MOV ssecs, seconds
+	JMP completepcint
+copydate:
+	MOV sdays, day
+	MOV smonth, month
+	MOV syear, year
+	JMP completepcint
+setnewvalues:
+	SBRS R16, PB4
+	JMP exitsettings
+	;SBRS R16, PB3
+	;JMP increment_right
+completepcint:
 	POP R16
 	STS SREG, R16
 	POP R17
 	POP R16	
+	RETI	
+exitsettings:
+	SUBI mode, 4
+	JMP completepcint
+//CTC TIMER0 ----------------------------------------------------- //
+TIMER0_COMPA:
+	SBR dissel, 0x08			;2.5ms delay
 	RETI
-buttondelay:
-	MOV R16, delay
-	CPI R16, 0x8F
-	BREQ enablebutton
-	INC delay
-	JMP completetimer0int
-enablebutton:
-	CLR R16
-	MOV delay, R16
-	LDI R16, (1<<PCINT4)|(1<<PCINT3)|(1<<PCINT2)
-	STS PCMSK0, R16				;Enable Pin Change on PB4, PB3 and PB2
-	JMP completetimer0int	
-//CTC TIMER1 ----------------------------------------------------- //
 TIMER1_COMPA:
 	PUSH R16					;Save initial conditions
 	PUSH R17
@@ -455,7 +471,7 @@ completetimer1int:
 	POP R17
 	POP R16	
 	RETI
-//Timer incrementers
+//Time incrementers
 time_inc:
 	MOV R17, R16
 	CBR R17, 0xF0
@@ -470,11 +486,11 @@ normal_increment:
 	INC R16
 	RET
 // Data Tables --------------------------------------------------- //
-.org 0x200
+.org 0x600
 	days_month:	.DB 0,49,40,49,48,49,48,49,49,48,49,48,49,0
 	modejumps:	.DB MST,SDM,ATM,ADM,TS,DSM,ATSM,ADSM,AAM,0
 	selector:	.DB 1,2,4,8,16,32
-	show2nm:	.DB 235,130,217,218,178,122,123,194,251,250
-	showupdown:	.DB 237,129,206,199,163,103,231,193,239,231
-	shownormal:	.DB 237,129,220,213,177,117,125,193,253,245
-	show2updown:.DB 189,33,174,167,51,151,159,161,191,183
+	show2nm:	.DB 222,136,230,236,184,124,126,200,254,252
+	showupdown: .DB 250,40,220,188,46,182,246,168,254,190
+	shownormal:	.DB 222,132,124,188,166,186,250,140,254,190
+	show2updown:.DB 252,144,62,182,210,230,238,176,254,246
