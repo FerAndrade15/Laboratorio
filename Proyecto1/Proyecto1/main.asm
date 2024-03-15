@@ -27,7 +27,7 @@ OUT SPL, R16
 LDI R17, HIGH(RAMEND)
 OUT SPH, R17
 //Functional Registers ----------------------------------------------
-.def resmode= R0
+.def timeal	= R0
 .def ahours	= R1
 .def amins	= R2
 .def asecs	= R3
@@ -120,7 +120,7 @@ Loop:
 	LDI ZL, LOW(modejumps<<1)
 	ADD ZL, mode
 	LPM R30, Z
-	CPI mode, 4
+	CPI mode, 4					;Table with 2bytes directions of 2 bytes
 	BRGE doublebyte
 	CLR R31
 	IJMP
@@ -129,110 +129,112 @@ doublebyte:
 	IJMP
 //Enable buttons
 enablebtns:
-	IN R16, PINB
+	IN R16, PINB							;Checks if buttons stabilized after 15ms
 	CBR R16, 0xE3
 	CPI R16, 0x1C
-	BRNE continuedisplayset
+	BRNE continuedisplayset					;If the stabilized it lets buttons react
 	LDI R16, (1<<PCINT4)|(1<<PCINT3)|(1<<PCINT2)
 	STS PCMSK0, R16
 	JMP continuedisplayset
 //Display assign of selector and value
 display_settings:
 	CPI dissel, 5
-	BREQ enablebtns
+	BREQ enablebtns							;Debouncing
 continuedisplayset:
-	LDI ZH, HIGH(selector<<1)	;Redirect to selector's values table
+	LDI ZH, HIGH(selector<<1)				;Redirect to selector's values table
 	LDI ZL, LOW(selector<<1)
 	ADD ZL, dissel
 	LPM R16, Z
-	OUT PORTC, R16
+	OUT PORTC, R16							;Select display
 	CPI dissel, 0
-	BREQ noblink
+	BREQ noblink							;Checks if the point must be on
 	CPI dissel, 5
-	BREQ noblink
+	BREQ noblink							;Checks if the point must be on
 	MOV R16, btndel
 	CBR R16, 0xFE
-	ADD display, R16
-	OUT PORTD, display		
+	ADD display, R16						;Adds the point to the value of the port
+	OUT PORTD, display						;Show on displays
 	JMP completedisplay
 noblink:
-	OUT PORTD, display		
+	OUT PORTD, display						;Show on displays without the point
 	JMP completedisplay
 completedisplay:
 	CPI dissel, 5
-	BREQ reset
+	BREQ reset								;Increment of selector (0>>5)
 	INC dissel
 	JMP Loop
 reset:
-	CLR dissel
+	CLR dissel								;Loop of selector (5>>0)
 	JMP Loop
-//Modes
-MST:							;Mode >> Show Time
-	SBI PORTB, PB0
+//Mode >> Show Time ----------------------------------------------------
+MST:							
+	SBI PORTB, PB0							;Identifier (Blue)
 	CPI dissel, 2
-	BRLO hours_settings
-	BREQ minutes1
-	CPI dissel, 3
+	BRLO hours_settings						;Checks the value that must show
+	BREQ minutes1							
+	CPI dissel, 3						
 	BREQ minutes0
 	MOV R16, seconds
-	SBRC dissel, 0
+	SBRC dissel, 0							;5Seconds' decades
 	JMP seconds0
 	//seconds1
 	SWAP R16
 	CBR R16, 0xF0
 	CALL D4_D5
 	JMP display_settings
-	hours_settings:
+	hours_settings:							;0>Hours'decades 1>Hours' units
 		MOV R16, hours
-		CALL D0_D1
+		CALL D0_D1							;Returns the value that will be shown on the display
 		JMP display_settings
-	minutes1:
+	minutes1:								;2>Minutes'decades 3>Minutes' units
 		MOV R16, minutes
-		CALL D2
+		CALL D2								;Returns the value that will be shown on the display
 		JMP display_settings
-	minutes0:
+	minutes0:								;2>Minutes'decades 3>Minutes' units
 		MOV R16, minutes
-		CALL D3
+		CALL D3								;Returns the value that will be shown on the display
 		JMP display_settings	
-	seconds0:
+	seconds0:								;4Seconds' units
 		CBR R16, 0xF0
-		CALL D4_D5
+		CALL D4_D5							;Returns the value that will be shown on the display
 		JMP display_settings
-SDM:							;Mode >> Show Date
-	SBI PORTB, PB5
+//Mode >> Show Date --------------------------------------------------
+SDM:						
+	SBI PORTB, PB1							;Show mode indicator (Green)
 	CPI dissel, 2
-	BRLO days_settings
+	BRLO days_settings						;Display selector start comparation
 	BREQ month1
 	CPI dissel, 3
 	BREQ month0
-	MOV R16, year
+	MOV R16, year							
 	SBRC dissel, 0
 	JMP year0
-	//year1
+	//year1									;Year msnibble shown
 	SWAP R16
 	CBR R16, 0xF0
 	CALL D4_D5
 	JMP display_settings
-	days_settings:
+	days_settings:							;Show day units
 		MOV R16, day
 		CALL D0_D1
 		JMP display_settings
-	month1:
+	month1:									;Show month decades
 		MOV R16, month
 		CALL D2
 		JMP display_settings
-	month0:
+	month0:									;Show month units
 		MOV R16, month
 		CALL D3
 		JMP display_settings	
-	year0:
+	year0:									;Show years units
 		CBR R16, 0xF0
 		CALL D4_D5
 		JMP display_settings
-ATM:							;Mode >> Show Alarm Time
-	SBI PORTB, PB0
-	SBI PORTB, PB5
-	CPI dissel, 2
+//Mode >> Show Alarm Time  -------------------------------------------
+ATM:
+	SBI PORTB, PB0							;Show identifier >> Purple
+	SBI PORTB, PB1
+	CPI dissel, 2							;Select display to send info
 	BRLO ahours_settings
 	BREQ amins1
 	CPI dissel, 3
@@ -240,32 +242,34 @@ ATM:							;Mode >> Show Alarm Time
 	MOV R16, asecs
 	SBRC dissel, 0
 	JMP aseconds0
-	//seconds1
-	SWAP R16
+	//seconds1								;Set alarm seconds decades
+	SWAP R16	
 	CBR R16, 0xF0
 	CALL D4_D5
 	JMP display_settings
-	ahours_settings:
+	ahours_settings:						;Set alarm hours 
 		MOV R16, ahours
 		CALL D0_D1
 		JMP display_settings
-	amins1:
+	amins1:									;Set alarm's minutes decades
 		MOV R16, amins
 		CALL D2
 		JMP display_settings
-	amins0:
+	amins0:									;Set alarm's minutes units
 		MOV R16, amins
 		CALL D3
 		JMP display_settings	
-	aseconds0:
+	aseconds0:								;Set alarm's seconds units
 		CBR R16, 0xF0
 		CALL D4_D5
 		JMP display_settings
-ADM:							;Mode >> Show Alarm Date
-	SBI PORTB, PB0
-	SBI PORTB, PB5
+//Mode >> Show Alarm Date ------------------------------------------ 
+//(ADDED Function >> not implemented)
+ADM:							
+	SBI PORTB, PB0							;Show identifier >> Purple
+	SBI PORTB, PB1
 	CPI dissel, 2
-	BRLO adays_settings
+	BRLO adays_settings						;Display selector and filter to colect info
 	BREQ amonth1
 	CPI dissel, 3
 	BREQ amonth0
@@ -277,223 +281,173 @@ ADM:							;Mode >> Show Alarm Date
 	CBR R16, 0xF0
 	CALL D4_D5
 	JMP display_settings
-	adays_settings:
+	adays_settings:							;Select days info
 		MOV R16, aday
 		CALL D0_D1
 		JMP display_settings
-	amonth1:
+	amonth1:								;Select months' alarm decades info
 		MOV R16, amonth
 		CALL D2
 		JMP display_settings
-	amonth0:
+	amonth0:								;Select months' alarm units info
 		MOV R16, amonth
 		CALL D3
 		JMP display_settings	
-	ayear0:
+	ayear0:									;Select alarm's years decades info
 		CBR R16, 0xF0
 		CALL D4_D5
 		JMP display_settings
-TA_S:								;Mode >> Time or Alarm Settings
-	SBRS btndel, 0
+//Mode >> Time or Alarm Time Settings -------------------------------------
+TA_S:
+	SBRS btndel, 0							;Blink of identifier of date settings in general >> Blue blink
 	CBI PORTB, PB0
 	SBRC btndel, 0
 	SBI PORTB, PB0
-	MOV R17, btndel
+	MOV R17, btndel							;Check changes on btndel, used to save the state of the buttons
 	SBRC R17, PB3
-	JMP DEC_LEFTm
+	JMP DEC_LEFTm							;Decrement values, time mode
 	SBRC R17, PB4
-	JMP INC_RIGHTm
-showdsptimeset:
-	CPI dissel, 2
-	BRLO shours_settings
-	BREQ sminutes1
+	JMP INC_RIGHTm							;Increment values, time mode
+showdsptimeset:								;Selection of info for the displays
+	CPI dissel, 2	
+	BRLO shours_settings					;Show hours
+	BREQ sminutes1							;Show minutes' decades
 	CPI dissel, 3
-	BREQ sminutes0
-	SBRS mode, 1
-	MOV R16, ssecs
-	SBRC mode, 1
-	MOV R16, asecs
+	BREQ sminutes0							;Show minutes' units
+	MOV R16, ssecs							
 	SBRC dissel, 0
-	JMP sseconds0
-	//seconds1
-	SWAP R16
+	JMP sseconds0							;Show seconds' units
+	//seconds1							
+	SWAP R16								
 	CBR R16, 0xF0
-	CALL D4_D5
-	JMP display_settings
-	shours_settings:
-		SBRS mode, 1
+	CALL D4_D5								;Show seconds' decades
+	JMP display_settings					
+	shours_settings:						;Show hours
 		MOV R16, shours
-		SBRC mode, 1
-		MOV R16, ahours
 		CALL D0_D1
 		JMP display_settings
-	sminutes1:
-		SBRS mode, 1
+	sminutes1:								;Show minutes' decades
 		MOV R16, smins
-		SBRC mode, 1
-		MOV R16, amins
 		CALL D2
-		JMP display_settings
-	sminutes0:
-		SBRS mode, 1
+		JMP display_settings			
+	sminutes0:								;Show minutes' units
 		MOV R16, smins
-		SBRC mode, 1
-		MOV R16, amins
 		CALL D3
 		JMP display_settings	
-	sseconds0:
+	sseconds0:								;Show seconds' units
 		CBR R16, 0xF0
 		CALL D4_D5
 		JMP display_settings
-INC_RIGHTm:
-	SBRC R17, PB2
+INC_RIGHTm:									;Incremet values selected
+	SBRC R17, PB2							;Just if the are no changes on the main button proceed to change shown info
 	JMP showdsptimeset
-	MOV R16, movdsl
+	MOV R16, movdsl							;movdsl stablished the selection of info that is going to change
 	CPI R16, 0
-	BREQ incrementShours
+	BREQ incrementShours					;increment hours at settings
 	CPI R16, 1
-	BREQ incrementSminutes
+	BREQ incrementSminutes					;increment hours at minutes
 	CPI R16, 2
-	BREQ incrementSseconds
+	BREQ incrementSseconds					;increment hours at seconds
 	JMP showdsptimeset
-confirminctm:
+confirminctm:								;Returns the value of the btndel to default
 	MOV R17, btndel
 	CBR R17, 0x10
 	MOV btndel, R17
-	JMP showdsptimeset
-incrementShours:
-	SBRS mode, 1
-	MOV R16, shours 
-	SBRC mode, 1
-	MOV R16, ahours 
-	CALL time_inc
-	CPI R16, 0x24
+	JMP showdsptimeset						;Jumps to the selecter of info
+incrementShours:						
+	MOV R16, shours							;Copy shown hours
+	CALL time_inc							;Inc hours
+	CPI R16, 0x24							;Checks max
 	BRNE offbuttoninch
-	CLR R16
+	CLR R16									;Reset of values
 offbuttoninch:
-	SBRS mode, 1
-	MOV shours, R16
-	SBRC mode, 1
-	MOV ahours, R16
+	MOV shours, R16							;Set the settings register of hours
 	JMP confirminctm
 incrementSminutes:
-	SBRS mode, 1
-	MOV R16, smins 
-	SBRC mode, 1
-	MOV R16, amins 
-	CALL time_inc
-	CPI R16, 0x60
-	BRNE offbuttonincm
-	CLR R16
+	MOV R16, smins							;Copy shown minutes
+	CALL time_inc							;Inc minutes
+	CPI R16, 0x60							;Compare to max
+	BRNE offbuttonincm						
+	CLR R16									;Reset of value
 offbuttonincm:
-	SBRS mode, 1
-	MOV smins, R16
-	SBRC mode, 1
-	MOV amins, R16
+	MOV smins, R16							;Set changes executed
 	JMP confirminctm
-incrementSseconds:
-	SBRS mode, 1
-	MOV R16, ssecs 
-	SBRC mode, 1
-	MOV R16, asecs 
-	CALL time_inc
-	CPI R16, 0x60
+incrementSseconds:							
+	MOV R16, ssecs							;Copy of shown seconds
+	CALL time_inc							;Increment of seconds
+	CPI R16, 0x60							;Compare to max
 	BRNE offbuttonincs
-	CLR R16
+	CLR R16									;Reset value
 offbuttonincs:
-	SBRS mode, 1
-	MOV ssecs, R16
-	SBRC mode, 1
-	MOV asecs, R16
+	MOV ssecs, R16							;Save change
 	JMP confirminctm
-DEC_LEFTm:
-	SBRC R17, PB2
+DEC_LEFTm:									;Decrement of selected info
+	SBRC R17, PB2							;After the button is disabled
 	JMP showdsptimeset
-	MOV R16, movdsl
+	MOV R16, movdsl							;Selection of info that's going to change
 	CPI R16, 0
-	BREQ decrementShours
+	BREQ decrementShours					;Decrement hours
 	CPI R16, 1
-	BREQ decrementSminutes
+	BREQ decrementSminutes					;Decrement minutes
 	CPI R16, 2
-	BREQ decrementSseconds
+	BREQ decrementSseconds					;Decrement seconds
 	JMP showdsptimeset
-confirmdectm:
-	MOV R17, btndel
+confirmdectm:		
+	MOV R17, btndel							;Reset value of filter (register)
 	CBR R17, 0x08
 	MOV btndel, R17
-	JMP showdsptimeset
+	JMP showdsptimeset						;Select displays info
 decrementShours:
-	SBRS mode, 1
-	MOV R16, shours 
-	SBRC mode, 1
-	MOV R16, ahours
+	MOV R16, shours							;Copy of hours
 	CPI R16, 0
-	BREQ underflowh
+	BREQ underflowh							;Compare to min
 	CALL time_dec
-	JMP finaldech
+	JMP finaldech							;Jmp to set changes 
 underflowh:
-	LDI R16, 0x23
+	LDI R16, 0x23							;Mov to max
 finaldech:
-	SBRS mode, 1
-	MOV shours, R16
-	SBRC mode, 1
-	MOV ahours, R16
+	MOV shours, R16							;Set changes
 	JMP confirmdectm
 decrementSminutes:
-	SBRS mode, 1
-	MOV R16, smins 
-	SBRC mode, 1
-	MOV R16, amins
+	MOV R16, smins							;Copy minutes
 	CPI R16, 0
-	BREQ underflowm
+	BREQ underflowm							;Compare to min
 	CALL time_dec
-	JMP finaldecm
+	JMP finaldecm							;Jmp to set changes 
 underflowm:
-	LDI R16, 0x59
+	LDI R16, 0x59							;Mov to max
 finaldecm:
-	SBRS mode, 1
-	MOV smins, R16
-	SBRC mode, 1
-	MOV amins, R16
+	MOV smins, R16							;Set changes
 	JMP confirmdectm
 decrementSseconds:
-	SBRS mode, 1
-	MOV R16, ssecs 
-	SBRC mode, 1
-	MOV R16, asecs 
+	MOV R16, ssecs							;Copy seconds
 	CPI R16, 0
-	BREQ underflows
+	BREQ underflows							;Compare to min
 	CALL time_dec
-	JMP finaldecs
+	JMP finaldecs							;Jmp to set changes 
 underflows:
-	LDI R16, 0x23
+	LDI R16, 0x59							;Mov to max
 finaldecs:
-	SBRS mode, 1
 	MOV ssecs, R16
-	SBRC mode, 1
-	MOV asecs, R16
-	JMP confirmdectm
-
-DASM:							;Mode >> Date or Alarm Date Settings
-	SBRS btndel, 0
-	CBI PORTB, PB5
+	JMP confirmdectm						;Set changes
+//Mode >> Date or Alarm Date Settings -------------------------------------
+DASM:							
+	SBRS btndel, 0					;Blink state >> Green
+	CBI PORTB, PB1
 	SBRC btndel, 0
-	SBI PORTB, PB5
-	MOV R17, btndel
+	SBI PORTB, PB1
+	MOV R17, btndel					;Saves info of buttons changes
 	SBRC R17, PB3
-	JMP DEC_LEFTd
+	JMP DEC_LEFTd					;Decrement dates
 	SBRC R17, PB4
-	JMP INC_RIGHTd
+	JMP INC_RIGHTd					;Increment dates
 showdspdateset:
 	CPI dissel, 2
 	BRLO sdays_settings				;Days settings jump
 	BREQ smonth1					;Month firstbit jump
 	CPI dissel, 3
 	BREQ smonth0					;Month lsbit jump		
-	SBRS mode, 1
 	MOV R16, syear
-	SBRC mode, 1
-	MOV R16, ayear
 	SBRC dissel, 0
 	JMP syears0						;Year lsbit jump
 	//year1
@@ -502,294 +456,239 @@ showdspdateset:
 	CALL D4_D5
 	JMP display_settings
 	sdays_settings:					;Days settings
-		SBRS mode, 1
 		MOV R16, sdays
-		SBRC mode, 1
-		MOV R16, aday
 		CALL D0_D1
 		JMP display_settings
 	smonth1:						;Month firstbit
-		SBRS mode, 1
 		MOV R16, smonth
-		SBRC mode, 1
-		MOV R16, amonth
 		CALL D2
 		JMP display_settings
 	smonth0:						;Month lsbit
-		SBRS mode, 1
 		MOV R16, smonth
-		SBRC mode, 1
-		MOV R16, amonth
 		CALL D3
 		JMP display_settings	
 	syears0:						;Year lsbit
 		CBR R16, 0xF0
 		CALL D4_D5
-		JMP display_settings
+		JMP display_settings		;Show on display
 INC_RIGHTd:
-	SBRC R17, PB2
+	SBRC R17, PB2					;Checks that the is no change on mode
 	JMP showdspdateset
+	MOV R16, movdsl					;Selection of info
 	CPI R16, 0
-	BREQ incrementSyears
+	BREQ incrementSyears			;Increment years
 	CPI R16, 1
-	BREQ incrementSmonths
-	MOV R16, movdsl
+	BREQ incrementSmonths			;Increment months
 	CPI R16, 2
-	BREQ incrementSdays
+	BREQ incrementSdays				;Increment days
 	JMP showdspdateset
 confirmincdt:
-	MOV R17, btndel
+	MOV R17, btndel					;Reset state of buttons lecture
 	CBR R17, 0x10
 	MOV btndel, R17
 	JMP showdspdateset
 incrementSyears:
-	SBRS mode, 1
-	MOV R16, syear
-	SBRC mode, 1
-	MOV R16, ayear 
-	CPI R16, 0x99
-	BRNE incrementyear
-	CLR R16
+	MOV R16, syear					;Copy year
+	CPI R16, 0x99					
+	BRNE incrementyear				;Compare to max
+	CLR R16							;Reset
 	JMP setnewyeari
 incrementyear:
-	CALL time_inc
-setnewyeari:
-	SBRS mode, 1
+	CALL time_inc					;Increment year
+setnewyeari:						;Set values
 	MOV syear, R16
-	SBRC mode, 1
-	MOV ayear, R16
 	JMP confirmincdt
 incrementSdays:
-	SBRS mode, 1
-	MOV R16, sdays
-	SBRC mode, 1
-	MOV R16, aday 
-	LDI ZH, HIGH(days_month<<1)	;Redirect to days of month table
+	MOV R16, sdays					;Copy days
+	LDI ZH, HIGH(days_month<<1)		;Redirect to days of month table
 	LDI ZL, LOW(days_month<<1)
-	SBRS mode, 1
-	ADD ZL, smonth				;Correct to the actual month
-	SBRC mode, 1
-	ADD ZL, amonth				;Correct to the actual month
-	LPM R17, Z					;Max day of month
-	CP R16, R17
-	BRNE incrementday
-	SBRS mode, 1
-	LDI R16, 1
-	SBRC mode, 1
-	CLR R16
-	JMP setnewday
+	ADD ZL, smonth					;Correct to the actual month
+	LPM R17, Z						;Max day of month
+	CP R16, R17						;Compare to max
+	BRNE incrementday				;Normal increment
+	LDI R16, 1						;Reset
+	JMP setnewday					
 incrementday:
-	CALL time_inc
+	CALL time_inc					;Normal increment
 setnewday:
-	SBRS mode, 1
-	MOV sdays, R16
-	SBRC mode, 1
-	MOV aday, R16
+	MOV sdays, R16					;Set changes
 	JMP confirmincdt
 incrementSmonths:
-	SBRS mode, 1
-	MOV R16, smonth 
-	SBRC mode, 1
-	MOV R16, amonth
-	CPI R16, 12
-	BRNE incrementmonth
-	SBRS mode, 1
-	LDI R16, 1
-	SBRC mode, 1
-	CLR R16
-	JMP setnewmonth
+	MOV R16, smonth					;Copy month
+	CPI R16, 12						
+	BRNE incrementmonth				;Compare to max
+	LDI R16, 1						;Reset
+	JMP setnewmonth					;Jmp to set values
 incrementmonth:
-	INC R16
+	INC R16							;Normal increment
 setnewmonth:
-	SBRS mode, 1
-	MOV smins, R16
-	SBRC mode, 1
-	MOV amins, R16
+	MOV smonth, R16					;Set changes
 	JMP confirmincdt
 DEC_LEFTd:
-	SBRC R17, PB2
+	SBRC R17, PB2					;Checks that the is no change on mode
 	JMP showdspdateset
+	MOV R16, movdsl					;Selection of info
 	CPI R16, 0
-	BREQ decrementSyears
+	BREQ decrementSyears			;Decrement years
 	CPI R16, 1
-	BREQ decrementSmonths
-	MOV R16, movdsl
+	BREQ decrementSmonths			;Decrement months
 	CPI R16, 2
-	BREQ decrementSdays
+	BREQ decrementSdays				;Decrement days
 	JMP showdspdateset
 confirmdecdt:
-	MOV R17, btndel
+	MOV R17, btndel					;Reset state of buttons lecture
 	CBR R17, 0x08
 	MOV btndel, R17
 	JMP showdspdateset
 decrementSdays:
-	SBRS mode, 1
-	MOV R16, sdays
-	SBRC mode, 1
-	MOV R16, aday 
-	LDI ZH, HIGH(days_month<<1)	;Redirect to days of month table
+	MOV R16, sdays					;Copy days
+	LDI ZH, HIGH(days_month<<1)		;Redirect to days of month table
 	LDI ZL, LOW(days_month<<1)
-	SBRS mode, 1
-	ADD ZL, smonth				;Correct to the actual month
-	SBRC mode, 1
-	ADD ZL, amonth				;Correct to the actual month
-	LPM R17, Z					;Max day of month
+	ADD ZL, smonth					;Correct to the actual month
+	LPM R17, Z						;Max day of month
 	CPI R16, 0
-	BRNE decrementday
-	MOV R16, R17
-	JMP setnewdayd
+	BRNE decrementday				;Normal decrement
+	MOV R16, R17					;Max
+	JMP setnewdayd					;Jmp set value
 decrementday:
-	CALL time_dec
+	CALL time_dec					;Decrement
 setnewdayd:
-	SBRS mode, 1
-	MOV sdays, R16
-	SBRC mode, 1
-	MOV aday, R16
-	JMP confirmdecdt
-decrementSmonths:
-	SBRS mode, 1
-	MOV R16, smonth 
-	SBRC mode, 1
-	MOV R16, amonth
-	SBRS mode, 1
-	CPI R16, 1
-	SBRC mode, 1
-	CPI R16, 0
-	BRNE decrementmonth
-	LDI R16, 12
-	JMP setnewmonthd
-decrementmonth:
-	INC R16
-setnewmonthd:
-	SBRS mode, 1
-	MOV smins, R16
-	SBRC mode, 1
-	MOV amins, R16
+	MOV sdays, R16					;Set changes
 	JMP confirmdecdt
 decrementSyears:
-	SBRS mode, 1
-	MOV R16, syear
-	SBRC mode, 1
-	MOV R16, ayear 
-	CPI R16, 0
-	BRNE decrementyear
-	LDI R16, 0x99
-	JMP setnewyeard
+	MOV R16, syear					;Copy years
+	CPI R16, 0						
+	BRNE decrementyear				;Compare min
+	LDI R16, 0x99					;Change to max
+	JMP setnewyeard					;Jmp set value
 decrementyear:
-	CALL time_inc
+	CALL time_dec					;Normal decrement
 setnewyeard:
-	SBRS mode, 1
-	MOV syear, R16
-	SBRC mode, 1
-	MOV ayear, R16
+	MOV syear, R16					;Set changes
 	JMP confirmdecdt
-
-AAM:
-	JMP Loop
+decrementSmonths:
+	MOV R16, smonth					;Copy month
+	CPI R16, 0
+	BRNE decrementmonth				;Compare to min
+	LDI R16, 0x99					;Change to max
+	JMP setnewmonthd
+decrementmonth:
+	CALL time_dec					;Normal decrement
+setnewmonthd:
+	MOV smonth, R16				;Set changes
+	JMP confirmdecdt
 //Subroutines
 D0_D1:
-	SBRS dissel, 0
+	SBRS dissel, 0					;Decades or units
 	SWAP R16
 	CBR R16, 0xF0
-	LDI ZH, HIGH(show2nm<<1)	;Redirect to displayed value
+	LDI ZH, HIGH(show2nm<<1)		;Redirect to displayed value
 	LDI ZL, LOW(show2nm<<1)
 	ADD ZL, R16
-	LPM display, Z
+	LPM display, Z					;Register to write portD
 	RET
 D2:
-	SWAP R16
+	SWAP R16						;Decades
 	CBR R16, 0xF0
-	LDI ZH, HIGH(showupdown<<1)	;Redirect to displayed value
+	LDI ZH, HIGH(showupdown<<1)		;Redirect to displayed value
 	LDI ZL, LOW(showupdown<<1)
 	ADD ZL, R16
-	LPM display, Z
+	LPM display, Z					;Register to write portD
 	RET
 D3:
-	CBR R16, 0xF0
-	LDI ZH, HIGH(shownormal<<1)	;Redirect to displayed value
+	CBR R16, 0xF0					;Units
+	LDI ZH, HIGH(shownormal<<1)		;Redirect to displayed value
 	LDI ZL, LOW(shownormal<<1)
 	ADD ZL, R16
-	LPM display, Z
+	LPM display, Z					;Register to write portD
 	RET
 D4_D5:
-	LDI ZH, HIGH(show2updown<<1);Redirect to displayed value
+	LDI ZH, HIGH(show2updown<<1)	;Redirect to displayed value
 	LDI ZL, LOW(show2updown<<1)
 	ADD ZL, R16
-	LPM display, Z
+	LPM display, Z					;Register to write portD
 	RET	
 //Time automatic incrementers
 time_inc:
-	MOV R17, R16
-	CBR R17, 0xF0
-	CPI R17, 9
-	BRNE normal_increment
+	MOV R17, R16					;Save value
+	CBR R17, 0xF0					
+	CPI R17, 9						;Overflow
+	BRNE normal_increment			;No overflow detected
 	SWAP R16
 	CBR R16, 0xF0
-	INC R16
+	INC R16							;Increment decades
 	SWAP R16
 	RET
 normal_increment:
-	INC R16
+	INC R16							;Increment units
 	RET
 //Time automatic decrementers
 time_dec:
-	MOV R17, R16
+	MOV R17, R16					;Save value
 	CBR R17, 0xF0
-	CPI R17, 0
-	BRNE normal_decrement
+	CPI R17, 0						;Underflow
+	BRNE normal_decrement			;No underflow detected
 	SWAP R16
-	CBR R16, 0xF0
-	DEC R16
+	CBR R16, 0xF0					
+	DEC R16							;Decrement decades
 	SWAP R16
-	LDI R17, 0x09
+	LDI R17, 0x09					;Set units at 9
 	ADD R16, R17
 	RET
 normal_decrement:
-	DEC R16
+	DEC R16							;Decrement units
 	RET
 //BUTTONS PIN CHANGE ---------------------------------------------- //
 PCINT0_INT:
-	PUSH R16					;Save initial conditions
+	PUSH R16						;Save initial conditions
 	PUSH R17
 	LDS R16, SREG
 	PUSH R16
-	IN R16, PINB				
+	IN R16, PINB					;Pin Change detection
 	CBR R16, 0xE3
 	CPI R16, 0x1C
-	BREQ completepcint
+	BREQ jmpcompletepcint			;No changes, pressing buttons
 	CPI mode, 4
-	BRLO changemodes
-	BRGE setnewvalues
+	BRLO changemodes				
+	BRGE jmpsetnewvalues
+jmpsetnewvalues:
+	JMP setnewvalues
+jmpcompletepcint:
+	JMP completepcint
 changemodes:
-	SBRS R16, PB4
+	SBRS R16, PB4					;Don't care
 	JMP completepcint
 	SBRS R16, PB3
-	JMP changeshownmode
+	JMP changeshownmode				;Change mode (Time>>Date>>AlarmTime>>AlarmDate)
 	SBRS R16, PB2
-	JMP intosettings
+	JMP intosettings				;Start settings of any mode
 changeshownmode:
-	CBI PORTB, PB0
+	CBI PORTB, PB0					;Clear all leds
 	CBI PORTB, PB1
 	CBI PORTB, PB5
 	CLR dissel
-	CPI mode, 3
+	CPI mode, 3						;Changes just into the first four modes >> Show
 	BREQ resetmode
 	INC mode
 	JMP completepcint
 resetmode:
-	CLR mode
+	CLR mode						;Reset
 	JMP completepcint
 intosettings:
-	CBI PORTB, PB0
+	CBI PORTB, PB0					;Clear all leds
 	CBI PORTB, PB1
 	CBI PORTB, PB5
-	LDI R17, 4 
+	LDI R17, 4						;Get into settings
 	ADD mode, R17
 	CBR mode, 0xF0
 	CPI mode, 4
-	BREQ copytime
+	BREQ copytime					;Copy register into settings register
 	CPI mode, 5
-	BREQ copydate
+	BREQ copydate					;Copy register into settings register
+	CPI mode, 6
+	BREQ copyatime					;Copy register into settings register
+	CPI mode, 7
+	BREQ copyadate					;Copy register into settings register
 	JMP completepcint
 copytime:
 	MOV shours, hours
@@ -801,16 +700,26 @@ copydate:
 	MOV smonth, month
 	MOV syear, year
 	JMP completepcint
+copyatime:
+	MOV shours, ahours
+	MOV smins, amins
+	MOV ssecs, asecs
+	JMP completepcint
+copyadate:
+	MOV sdays, aday
+	MOV smonth, amonth
+	MOV syear, ayear
+	JMP completepcint
 setnewvalues:
-	MOV R17, btndel
+	MOV R17, btndel					;Buttons recognizers
 	CBR R17, 0xFE
-	SBRS R16, PB4
+	SBRS R16, PB4					;Button press Inc
 	SBR R17, 0x10
-	SBRS R16, PB3
+	SBRS R16, PB3					;Button press Dec
 	SBR R17, 0x08
+	MOV btndel, R17					;Save buttons changes
 	SBRS R16, PB2
-	JMP exitsettings
-	MOV btndel, R17
+	JMP exitsettings				;Set values changes on settings and change info selected to change
 completepcint:
 	CLR R16
 	STS PCMSK0, R16				;Disable Pin Change on PB4, PB3 and PB2
@@ -821,19 +730,69 @@ completepcint:
 	RETI	
 exitsettings:	
 	MOV R16, movdsl
-	INC R16
-	MOV movdsl, R16
+	INC R16						;Three states of changes
+	MOV movdsl, R16	
 	CPI R16, 3
-	BRNE completepcint
+	BRLO completepcint			;At 3(fourth state) clear all and reset settings
 	CLR movdsl
-	SUBI mode, 4
+	CPI mode, 4
+	BREQ scopytime				;Set info changed
+	CPI mode, 5
+	BREQ scopydate				;Set info changed
+	CPI mode, 6
+	BREQ scopyatime				;Set info changed
+	CPI mode, 7
+	BREQ scopyadate				;Set info changed
+	JMP completepcint
+scopytime:
 	MOV hours, shours
 	MOV minutes, smins
 	MOV seconds, ssecs
+	SUBI mode, 4
+	JMP completepcint
+scopydate:
+	MOV day, sdays
+	MOV month, smonth
+	MOV year, syear
+	SUBI mode, 4
+	JMP completepcint
+scopyatime:
+	MOV ahours, shours
+	MOV amins, smins
+	MOV asecs, ssecs
+	SUBI mode, 4
+	JMP completepcint
+scopyadate:
+	MOV aday, sdays
+	MOV amonth, smonth
+	MOV ayear, syear
+	SUBI mode, 4
 	JMP completepcint
 //CTC TIMER0 ----------------------------------------------------- //
 TIMER0_COMPA:
 	SBR dissel, 0x08			;2.5ms delay
+	SBRC btndel, 7
+	JMP alarm_time
+	RETI
+alarm_time:
+	PUSH R16					;Save initial conditions
+	PUSH R17
+	LDS R16, SREG
+	PUSH R16
+	INC timeal
+	SBI PORTB, PB5
+	MOV R16, timeal
+	CPI R16, 0xFE
+	BRNE endalint
+	CBI PORTB,PB5
+	MOV R16, btndel
+	CBR R16, 0x80
+	MOV btndel, R16
+endalint:
+	POP R16
+	STS SREG, R16
+	POP R17
+	POP R16	
 	RETI
 TIMER1_COMPA:
 	PUSH R16					;Save initial conditions
@@ -897,6 +856,16 @@ aincrementyear:
 	BRNE completetimer1int
 	CLR year
 completetimer1int:
+	CP ahours, hours
+	BRNE endint
+	CP amins, minutes
+	BRNE endint
+	CP asecs, seconds
+	BRNE endint
+	MOV R16, btndel
+	SBR R16, 0x80
+	MOV btndel, R16
+endint:
 	POP R16
 	STS SREG, R16
 	POP R17
@@ -905,7 +874,7 @@ completetimer1int:
 // Data Tables --------------------------------------------------- //
 .org 0x600
 	days_month:	.DB 0,49,40,49,48,49,48,49,49,48,49,48,49,0
-	modejumps:	.DB MST,SDM,ATM,ADM,TA_S,DASM,TA_S,DASM,AAM,0
+	modejumps:	.DB MST,SDM,ATM,ADM,TA_S,DASM,TA_S,DASM
 	selector:	.DB 1,2,4,8,16,32
 	show2nm:	.DB 222,136,230,236,184,124,126,200,254,252
 	showupdown: .DB 250,66,220,214,102,182,190,82,254,246

@@ -1,5 +1,5 @@
 
-AVRASM ver. 2.2.8  C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.asm Thu Mar 14 13:52:08 2024
+AVRASM ver. 2.2.8  C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.asm Thu Mar 14 23:41:18 2024
 
 [builtin](2): Including file 'C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.7.374\avrasm\inc\m328Pdef.inc'
 C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.asm(11): Including file 'C:/Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\ATmega_DFP\1.7.374\avrasm\inc\M328PDEF.inc'
@@ -1045,11 +1045,11 @@ C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.a
                                  .org 0x00						;Reset
 000000 940c 001e                 	JMP START
                                  .org 0x0006						;Pin Change Interrupt Request 0
-000006 940c 02eb                 	JMP PCINT0_INT
+000006 940c 027b                 	JMP PCINT0_INT
                                  .org 0x0016						;Compare Match A Timer1
-000016 940c 0343                 	JMP TIMER1_COMPA
+000016 940c 0318                 	JMP TIMER1_COMPA
                                  .org 0x001C						;Compare Match A Timer0
-00001c 940c 0341                 	JMP TIMER0_COMPA
+00001c 940c 02ff                 	JMP TIMER0_COMPA
                                  // Reset --------------------------------------------------------- //
                                  START:
                                  // Stack Pointer ----------------------------------------------------
@@ -1058,7 +1058,7 @@ C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.a
 000020 e018                      LDI R17, HIGH(RAMEND)
 000021 bf1e                      OUT SPH, R17
                                  //Functional Registers ----------------------------------------------
-                                 .def resmode= R0
+                                 .def timeal	= R0
                                  .def ahours	= R1
                                  .def amins	= R2
                                  .def asecs	= R3
@@ -1151,7 +1151,7 @@ C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.a
 000064 e0ee                      	LDI ZL, LOW(modejumps<<1)
 000065 0fe8                      	ADD ZL, mode
 000066 91e4                      	LPM R30, Z
-000067 3084                      	CPI mode, 4
+000067 3084                      	CPI mode, 4					;Table with 2bytes directions of 2 bytes
 000068 f414                      	BRGE doublebyte
 000069 27ff                      	CLR R31
 00006a 9409                      	IJMP
@@ -1160,110 +1160,112 @@ C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.a
 00006c 9409                      	IJMP
                                  //Enable buttons
                                  enablebtns:
-00006d b103                      	IN R16, PINB
+00006d b103                      	IN R16, PINB							;Checks if buttons stabilized after 15ms
 00006e 710c                      	CBR R16, 0xE3
 00006f 310c                      	CPI R16, 0x1C
-000070 f439                      	BRNE continuedisplayset
+000070 f439                      	BRNE continuedisplayset					;If the stabilized it lets buttons react
 000071 e10c                      	LDI R16, (1<<PCINT4)|(1<<PCINT3)|(1<<PCINT2)
 000072 9300 006b                 	STS PCMSK0, R16
 000074 940c 0078                 	JMP continuedisplayset
                                  //Display assign of selector and value
                                  display_settings:
 000076 3095                      	CPI dissel, 5
-000077 f3a9                      	BREQ enablebtns
+000077 f3a9                      	BREQ enablebtns							;Debouncing
                                  continuedisplayset:
-000078 e0fc                      	LDI ZH, HIGH(selector<<1)	;Redirect to selector's values table
-000079 e1e8                      	LDI ZL, LOW(selector<<1)
+000078 e0fc                      	LDI ZH, HIGH(selector<<1)				;Redirect to selector's values table
+000079 e1e6                      	LDI ZL, LOW(selector<<1)
 00007a 0fe9                      	ADD ZL, dissel
 00007b 9104                      	LPM R16, Z
-00007c b908                      	OUT PORTC, R16
+00007c b908                      	OUT PORTC, R16							;Select display
 00007d 3090                      	CPI dissel, 0
-00007e f041                      	BREQ noblink
+00007e f041                      	BREQ noblink							;Checks if the point must be on
 00007f 3095                      	CPI dissel, 5
-000080 f031                      	BREQ noblink
+000080 f031                      	BREQ noblink							;Checks if the point must be on
 000081 2d0d                      	MOV R16, btndel
 000082 7001                      	CBR R16, 0xFE
-000083 0ee0                      	ADD display, R16
-000084 b8eb                      	OUT PORTD, display		
+000083 0ee0                      	ADD display, R16						;Adds the point to the value of the port
+000084 b8eb                      	OUT PORTD, display						;Show on displays
 000085 940c 008a                 	JMP completedisplay
                                  noblink:
-000087 b8eb                      	OUT PORTD, display		
+000087 b8eb                      	OUT PORTD, display						;Show on displays without the point
 000088 940c 008a                 	JMP completedisplay
                                  completedisplay:
 00008a 3095                      	CPI dissel, 5
-00008b f019                      	BREQ reset
+00008b f019                      	BREQ reset								;Increment of selector (0>>5)
 00008c 9593                      	INC dissel
 00008d 940c 005f                 	JMP Loop
                                  reset:
-00008f 2799                      	CLR dissel
+00008f 2799                      	CLR dissel								;Loop of selector (5>>0)
 000090 940c 005f                 	JMP Loop
-                                 //Modes
-                                 MST:							;Mode >> Show Time
-000092 9a28                      	SBI PORTB, PB0
+                                 //Mode >> Show Time ----------------------------------------------------
+                                 MST:							
+000092 9a28                      	SBI PORTB, PB0							;Identifier (Blue)
 000093 3092                      	CPI dissel, 2
-000094 f068                      	BRLO hours_settings
-000095 f089                      	BREQ minutes1
-000096 3093                      	CPI dissel, 3
+000094 f068                      	BRLO hours_settings						;Checks the value that must show
+000095 f089                      	BREQ minutes1							
+000096 3093                      	CPI dissel, 3						
 000097 f0a1                      	BREQ minutes0
 000098 2f04                      	MOV R16, seconds
-000099 fd90                      	SBRC dissel, 0
+000099 fd90                      	SBRC dissel, 0							;5Seconds' decades
 00009a 940c 00b1                 	JMP seconds0
                                  	//seconds1
 00009c 9502                      	SWAP R16
 00009d 700f                      	CBR R16, 0xF0
-00009e 940e 02ce                 	CALL D4_D5
+00009e 940e 025e                 	CALL D4_D5
 0000a0 940c 0076                 	JMP display_settings
-                                 	hours_settings:
+                                 	hours_settings:							;0>Hours'decades 1>Hours' units
 0000a2 2f02                      		MOV R16, hours
-0000a3 940e 02b9                 		CALL D0_D1
+0000a3 940e 0249                 		CALL D0_D1							;Returns the value that will be shown on the display
 0000a5 940c 0076                 		JMP display_settings
-                                 	minutes1:
+                                 	minutes1:								;2>Minutes'decades 3>Minutes' units
 0000a7 2f03                      		MOV R16, minutes
-0000a8 940e 02c1                 		CALL D2
+0000a8 940e 0251                 		CALL D2								;Returns the value that will be shown on the display
 0000aa 940c 0076                 		JMP display_settings
-                                 	minutes0:
+                                 	minutes0:								;2>Minutes'decades 3>Minutes' units
 0000ac 2f03                      		MOV R16, minutes
-0000ad 940e 02c8                 		CALL D3
+0000ad 940e 0258                 		CALL D3								;Returns the value that will be shown on the display
 0000af 940c 0076                 		JMP display_settings	
-                                 	seconds0:
+                                 	seconds0:								;4Seconds' units
 0000b1 700f                      		CBR R16, 0xF0
-0000b2 940e 02ce                 		CALL D4_D5
+0000b2 940e 025e                 		CALL D4_D5							;Returns the value that will be shown on the display
 0000b4 940c 0076                 		JMP display_settings
-                                 SDM:							;Mode >> Show Date
-0000b6 9a2d                      	SBI PORTB, PB5
+                                 //Mode >> Show Date --------------------------------------------------
+                                 SDM:						
+0000b6 9a29                      	SBI PORTB, PB1							;Show mode indicator (Green)
 0000b7 3092                      	CPI dissel, 2
-0000b8 f068                      	BRLO days_settings
+0000b8 f068                      	BRLO days_settings						;Display selector start comparation
 0000b9 f089                      	BREQ month1
 0000ba 3093                      	CPI dissel, 3
 0000bb f0a1                      	BREQ month0
-0000bc 2f07                      	MOV R16, year
+0000bc 2f07                      	MOV R16, year							
 0000bd fd90                      	SBRC dissel, 0
 0000be 940c 00d5                 	JMP year0
-                                 	//year1
+                                 	//year1									;Year msnibble shown
 0000c0 9502                      	SWAP R16
 0000c1 700f                      	CBR R16, 0xF0
-0000c2 940e 02ce                 	CALL D4_D5
+0000c2 940e 025e                 	CALL D4_D5
 0000c4 940c 0076                 	JMP display_settings
-                                 	days_settings:
+                                 	days_settings:							;Show day units
 0000c6 2f05                      		MOV R16, day
-0000c7 940e 02b9                 		CALL D0_D1
+0000c7 940e 0249                 		CALL D0_D1
 0000c9 940c 0076                 		JMP display_settings
-                                 	month1:
+                                 	month1:									;Show month decades
 0000cb 2f06                      		MOV R16, month
-0000cc 940e 02c1                 		CALL D2
+0000cc 940e 0251                 		CALL D2
 0000ce 940c 0076                 		JMP display_settings
-                                 	month0:
+                                 	month0:									;Show month units
 0000d0 2f06                      		MOV R16, month
-0000d1 940e 02c8                 		CALL D3
+0000d1 940e 0258                 		CALL D3
 0000d3 940c 0076                 		JMP display_settings	
-                                 	year0:
+                                 	year0:									;Show years units
 0000d5 700f                      		CBR R16, 0xF0
-0000d6 940e 02ce                 		CALL D4_D5
+0000d6 940e 025e                 		CALL D4_D5
 0000d8 940c 0076                 		JMP display_settings
-                                 ATM:							;Mode >> Show Alarm Time
-0000da 9a28                      	SBI PORTB, PB0
-0000db 9a2d                      	SBI PORTB, PB5
-0000dc 3092                      	CPI dissel, 2
+                                 //Mode >> Show Alarm Time  -------------------------------------------
+                                 ATM:
+0000da 9a28                      	SBI PORTB, PB0							;Show identifier >> Purple
+0000db 9a29                      	SBI PORTB, PB1
+0000dc 3092                      	CPI dissel, 2							;Select display to send info
 0000dd f068                      	BRLO ahours_settings
 0000de f089                      	BREQ amins1
 0000df 3093                      	CPI dissel, 3
@@ -1271,32 +1273,34 @@ C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.a
 0000e1 2d03                      	MOV R16, asecs
 0000e2 fd90                      	SBRC dissel, 0
 0000e3 940c 00fa                 	JMP aseconds0
-                                 	//seconds1
-0000e5 9502                      	SWAP R16
+                                 	//seconds1								;Set alarm seconds decades
+0000e5 9502                      	SWAP R16	
 0000e6 700f                      	CBR R16, 0xF0
-0000e7 940e 02ce                 	CALL D4_D5
+0000e7 940e 025e                 	CALL D4_D5
 0000e9 940c 0076                 	JMP display_settings
-                                 	ahours_settings:
+                                 	ahours_settings:						;Set alarm hours 
 0000eb 2d01                      		MOV R16, ahours
-0000ec 940e 02b9                 		CALL D0_D1
+0000ec 940e 0249                 		CALL D0_D1
 0000ee 940c 0076                 		JMP display_settings
-                                 	amins1:
+                                 	amins1:									;Set alarm's minutes decades
 0000f0 2d02                      		MOV R16, amins
-0000f1 940e 02c1                 		CALL D2
+0000f1 940e 0251                 		CALL D2
 0000f3 940c 0076                 		JMP display_settings
-                                 	amins0:
+                                 	amins0:									;Set alarm's minutes units
 0000f5 2d02                      		MOV R16, amins
-0000f6 940e 02c8                 		CALL D3
+0000f6 940e 0258                 		CALL D3
 0000f8 940c 0076                 		JMP display_settings	
-                                 	aseconds0:
+                                 	aseconds0:								;Set alarm's seconds units
 0000fa 700f                      		CBR R16, 0xF0
-0000fb 940e 02ce                 		CALL D4_D5
+0000fb 940e 025e                 		CALL D4_D5
 0000fd 940c 0076                 		JMP display_settings
-                                 ADM:							;Mode >> Show Alarm Date
-0000ff 9a28                      	SBI PORTB, PB0
-000100 9a2d                      	SBI PORTB, PB5
+                                 //Mode >> Show Alarm Date ------------------------------------------ 
+                                 //(ADDED Function >> not implemented)
+                                 ADM:							
+0000ff 9a28                      	SBI PORTB, PB0							;Show identifier >> Purple
+000100 9a29                      	SBI PORTB, PB1
 000101 3092                      	CPI dissel, 2
-000102 f068                      	BRLO adays_settings
+000102 f068                      	BRLO adays_settings						;Display selector and filter to colect info
 000103 f089                      	BREQ amonth1
 000104 3093                      	CPI dissel, 3
 000105 f0a1                      	BREQ amonth0
@@ -1306,633 +1310,598 @@ C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.a
                                  	//year1
 00010a 9502                      	SWAP R16
 00010b 700f                      	CBR R16, 0xF0
-00010c 940e 02ce                 	CALL D4_D5
+00010c 940e 025e                 	CALL D4_D5
 00010e 940c 0076                 	JMP display_settings
-                                 	adays_settings:
+                                 	adays_settings:							;Select days info
 000110 2d04                      		MOV R16, aday
-000111 940e 02b9                 		CALL D0_D1
+000111 940e 0249                 		CALL D0_D1
 000113 940c 0076                 		JMP display_settings
-                                 	amonth1:
+                                 	amonth1:								;Select months' alarm decades info
 000115 2d05                      		MOV R16, amonth
-000116 940e 02c1                 		CALL D2
+000116 940e 0251                 		CALL D2
 000118 940c 0076                 		JMP display_settings
-                                 	amonth0:
+                                 	amonth0:								;Select months' alarm units info
 00011a 2d05                      		MOV R16, amonth
-00011b 940e 02c8                 		CALL D3
+00011b 940e 0258                 		CALL D3
 00011d 940c 0076                 		JMP display_settings	
-                                 	ayear0:
+                                 	ayear0:									;Select alarm's years decades info
 00011f 700f                      		CBR R16, 0xF0
-000120 940e 02ce                 		CALL D4_D5
+000120 940e 025e                 		CALL D4_D5
 000122 940c 0076                 		JMP display_settings
-                                 TA_S:								;Mode >> Time or Alarm Settings
-000124 fed0                      	SBRS btndel, 0
+                                 //Mode >> Time or Alarm Time Settings -------------------------------------
+                                 TA_S:
+000124 fed0                      	SBRS btndel, 0							;Blink of identifier of date settings in general >> Blue blink
 000125 9828                      	CBI PORTB, PB0
 000126 fcd0                      	SBRC btndel, 0
 000127 9a28                      	SBI PORTB, PB0
-000128 2d1d                      	MOV R17, btndel
+000128 2d1d                      	MOV R17, btndel							;Check changes on btndel, used to save the state of the buttons
 000129 fd13                      	SBRC R17, PB3
-00012a 940c 019c                 	JMP DEC_LEFTm
+00012a 940c 017e                 	JMP DEC_LEFTm							;Decrement values, time mode
 00012c fd14                      	SBRC R17, PB4
-00012d 940c 015e                 	JMP INC_RIGHTm
-                                 showdsptimeset:
-00012f 3092                      	CPI dissel, 2
-000130 f080                      	BRLO shours_settings
-000131 f0b9                      	BREQ sminutes1
+00012d 940c 0152                 	JMP INC_RIGHTm							;Increment values, time mode
+                                 showdsptimeset:								;Selection of info for the displays
+00012f 3092                      	CPI dissel, 2	
+000130 f068                      	BRLO shours_settings					;Show hours
+000131 f089                      	BREQ sminutes1							;Show minutes' decades
 000132 3093                      	CPI dissel, 3
-000133 f0e9                      	BREQ sminutes0
-000134 ff81                      	SBRS mode, 1
-000135 2d09                      	MOV R16, ssecs
-000136 fd81                      	SBRC mode, 1
-000137 2d03                      	MOV R16, asecs
-000138 fd90                      	SBRC dissel, 0
-000139 940c 0159                 	JMP sseconds0
-                                 	//seconds1
-00013b 9502                      	SWAP R16
-00013c 700f                      	CBR R16, 0xF0
-00013d 940e 02ce                 	CALL D4_D5
-00013f 940c 0076                 	JMP display_settings
-                                 	shours_settings:
-000141 ff81                      		SBRS mode, 1
-000142 2d07                      		MOV R16, shours
-000143 fd81                      		SBRC mode, 1
-000144 2d01                      		MOV R16, ahours
-000145 940e 02b9                 		CALL D0_D1
-000147 940c 0076                 		JMP display_settings
-                                 	sminutes1:
-000149 ff81                      		SBRS mode, 1
-00014a 2d08                      		MOV R16, smins
-00014b fd81                      		SBRC mode, 1
-00014c 2d02                      		MOV R16, amins
-00014d 940e 02c1                 		CALL D2
-00014f 940c 0076                 		JMP display_settings
-                                 	sminutes0:
-000151 ff81                      		SBRS mode, 1
-000152 2d08                      		MOV R16, smins
-000153 fd81                      		SBRC mode, 1
-000154 2d02                      		MOV R16, amins
-000155 940e 02c8                 		CALL D3
-000157 940c 0076                 		JMP display_settings	
-                                 	sseconds0:
-000159 700f                      		CBR R16, 0xF0
-00015a 940e 02ce                 		CALL D4_D5
-00015c 940c 0076                 		JMP display_settings
-                                 INC_RIGHTm:
-00015e fd12                      	SBRC R17, PB2
-00015f 940c 012f                 	JMP showdsptimeset
-000161 2d0f                      	MOV R16, movdsl
-000162 3000                      	CPI R16, 0
-000163 f059                      	BREQ incrementShours
-000164 3001                      	CPI R16, 1
-000165 f0c1                      	BREQ incrementSminutes
-000166 3002                      	CPI R16, 2
-000167 f129                      	BREQ incrementSseconds
-000168 940c 012f                 	JMP showdsptimeset
-                                 confirminctm:
-00016a 2d1d                      	MOV R17, btndel
-00016b 7e1f                      	CBR R17, 0x10
-00016c 2ed1                      	MOV btndel, R17
-00016d 940c 012f                 	JMP showdsptimeset
-                                 incrementShours:
-00016f ff81                      	SBRS mode, 1
-000170 2d07                      	MOV R16, shours 
-000171 fd81                      	SBRC mode, 1
-000172 2d01                      	MOV R16, ahours 
-000173 940e 02d3                 	CALL time_inc
-000175 3204                      	CPI R16, 0x24
-000176 f409                      	BRNE offbuttoninch
-000177 2700                      	CLR R16
+000133 f0a1                      	BREQ sminutes0							;Show minutes' units
+000134 2d09                      	MOV R16, ssecs							
+000135 fd90                      	SBRC dissel, 0
+000136 940c 014d                 	JMP sseconds0							;Show seconds' units
+                                 	//seconds1							
+000138 9502                      	SWAP R16								
+000139 700f                      	CBR R16, 0xF0
+00013a 940e 025e                 	CALL D4_D5								;Show seconds' decades
+00013c 940c 0076                 	JMP display_settings					
+                                 	shours_settings:						;Show hours
+00013e 2d07                      		MOV R16, shours
+00013f 940e 0249                 		CALL D0_D1
+000141 940c 0076                 		JMP display_settings
+                                 	sminutes1:								;Show minutes' decades
+000143 2d08                      		MOV R16, smins
+000144 940e 0251                 		CALL D2
+000146 940c 0076                 		JMP display_settings			
+                                 	sminutes0:								;Show minutes' units
+000148 2d08                      		MOV R16, smins
+000149 940e 0258                 		CALL D3
+00014b 940c 0076                 		JMP display_settings	
+                                 	sseconds0:								;Show seconds' units
+00014d 700f                      		CBR R16, 0xF0
+00014e 940e 025e                 		CALL D4_D5
+000150 940c 0076                 		JMP display_settings
+                                 INC_RIGHTm:									;Incremet values selected
+000152 fd12                      	SBRC R17, PB2							;Just if the are no changes on the main button proceed to change shown info
+000153 940c 012f                 	JMP showdsptimeset
+000155 2d0f                      	MOV R16, movdsl							;movdsl stablished the selection of info that is going to change
+000156 3000                      	CPI R16, 0
+000157 f059                      	BREQ incrementShours					;increment hours at settings
+000158 3001                      	CPI R16, 1
+000159 f091                      	BREQ incrementSminutes					;increment hours at minutes
+00015a 3002                      	CPI R16, 2
+00015b f0c9                      	BREQ incrementSseconds					;increment hours at seconds
+00015c 940c 012f                 	JMP showdsptimeset
+                                 confirminctm:								;Returns the value of the btndel to default
+00015e 2d1d                      	MOV R17, btndel
+00015f 7e1f                      	CBR R17, 0x10
+000160 2ed1                      	MOV btndel, R17
+000161 940c 012f                 	JMP showdsptimeset						;Jumps to the selecter of info
+                                 incrementShours:						
+000163 2d07                      	MOV R16, shours							;Copy shown hours
+000164 940e 0263                 	CALL time_inc							;Inc hours
+000166 3204                      	CPI R16, 0x24							;Checks max
+000167 f409                      	BRNE offbuttoninch
+000168 2700                      	CLR R16									;Reset of values
                                  offbuttoninch:
-000178 ff81                      	SBRS mode, 1
-000179 2e70                      	MOV shours, R16
-00017a fd81                      	SBRC mode, 1
-00017b 2e10                      	MOV ahours, R16
-00017c 940c 016a                 	JMP confirminctm
+000169 2e70                      	MOV shours, R16							;Set the settings register of hours
+00016a 940c 015e                 	JMP confirminctm
                                  incrementSminutes:
-00017e ff81                      	SBRS mode, 1
-00017f 2d08                      	MOV R16, smins 
-000180 fd81                      	SBRC mode, 1
-000181 2d02                      	MOV R16, amins 
-000182 940e 02d3                 	CALL time_inc
-000184 3600                      	CPI R16, 0x60
-000185 f409                      	BRNE offbuttonincm
-000186 2700                      	CLR R16
+00016c 2d08                      	MOV R16, smins							;Copy shown minutes
+00016d 940e 0263                 	CALL time_inc							;Inc minutes
+00016f 3600                      	CPI R16, 0x60							;Compare to max
+000170 f409                      	BRNE offbuttonincm						
+000171 2700                      	CLR R16									;Reset of value
                                  offbuttonincm:
-000187 ff81                      	SBRS mode, 1
-000188 2e80                      	MOV smins, R16
-000189 fd81                      	SBRC mode, 1
-00018a 2e20                      	MOV amins, R16
-00018b 940c 016a                 	JMP confirminctm
-                                 incrementSseconds:
-00018d ff81                      	SBRS mode, 1
-00018e 2d09                      	MOV R16, ssecs 
-00018f fd81                      	SBRC mode, 1
-000190 2d03                      	MOV R16, asecs 
-000191 940e 02d3                 	CALL time_inc
-000193 3600                      	CPI R16, 0x60
-000194 f409                      	BRNE offbuttonincs
-000195 2700                      	CLR R16
+000172 2e80                      	MOV smins, R16							;Set changes executed
+000173 940c 015e                 	JMP confirminctm
+                                 incrementSseconds:							
+000175 2d09                      	MOV R16, ssecs							;Copy of shown seconds
+000176 940e 0263                 	CALL time_inc							;Increment of seconds
+000178 3600                      	CPI R16, 0x60							;Compare to max
+000179 f409                      	BRNE offbuttonincs
+00017a 2700                      	CLR R16									;Reset value
                                  offbuttonincs:
-000196 ff81                      	SBRS mode, 1
-000197 2e90                      	MOV ssecs, R16
-000198 fd81                      	SBRC mode, 1
-000199 2e30                      	MOV asecs, R16
-00019a 940c 016a                 	JMP confirminctm
-                                 DEC_LEFTm:
-00019c fd12                      	SBRC R17, PB2
-00019d 940c 012f                 	JMP showdsptimeset
-00019f 2d0f                      	MOV R16, movdsl
-0001a0 3000                      	CPI R16, 0
-0001a1 f059                      	BREQ decrementShours
-0001a2 3001                      	CPI R16, 1
-0001a3 f0d1                      	BREQ decrementSminutes
-0001a4 3002                      	CPI R16, 2
-0001a5 f149                      	BREQ decrementSseconds
-0001a6 940c 012f                 	JMP showdsptimeset
-                                 confirmdectm:
-0001a8 2d1d                      	MOV R17, btndel
-0001a9 7f17                      	CBR R17, 0x08
-0001aa 2ed1                      	MOV btndel, R17
-0001ab 940c 012f                 	JMP showdsptimeset
+00017b 2e90                      	MOV ssecs, R16							;Save change
+00017c 940c 015e                 	JMP confirminctm
+                                 DEC_LEFTm:									;Decrement of selected info
+00017e fd12                      	SBRC R17, PB2							;After the button is disabled
+00017f 940c 012f                 	JMP showdsptimeset
+000181 2d0f                      	MOV R16, movdsl							;Selection of info that's going to change
+000182 3000                      	CPI R16, 0
+000183 f059                      	BREQ decrementShours					;Decrement hours
+000184 3001                      	CPI R16, 1
+000185 f0a1                      	BREQ decrementSminutes					;Decrement minutes
+000186 3002                      	CPI R16, 2
+000187 f0e9                      	BREQ decrementSseconds					;Decrement seconds
+000188 940c 012f                 	JMP showdsptimeset
+                                 confirmdectm:		
+00018a 2d1d                      	MOV R17, btndel							;Reset value of filter (register)
+00018b 7f17                      	CBR R17, 0x08
+00018c 2ed1                      	MOV btndel, R17
+00018d 940c 012f                 	JMP showdsptimeset						;Select displays info
                                  decrementShours:
-0001ad ff81                      	SBRS mode, 1
-0001ae 2d07                      	MOV R16, shours 
-0001af fd81                      	SBRC mode, 1
-0001b0 2d01                      	MOV R16, ahours
-0001b1 3000                      	CPI R16, 0
-0001b2 f021                      	BREQ underflowh
-0001b3 940e 02de                 	CALL time_dec
-0001b5 940c 01b8                 	JMP finaldech
+00018f 2d07                      	MOV R16, shours							;Copy of hours
+000190 3000                      	CPI R16, 0
+000191 f021                      	BREQ underflowh							;Compare to min
+000192 940e 026e                 	CALL time_dec
+000194 940c 0197                 	JMP finaldech							;Jmp to set changes 
                                  underflowh:
-0001b7 e203                      	LDI R16, 0x23
+000196 e203                      	LDI R16, 0x23							;Mov to max
                                  finaldech:
-0001b8 ff81                      	SBRS mode, 1
-0001b9 2e70                      	MOV shours, R16
-0001ba fd81                      	SBRC mode, 1
-0001bb 2e10                      	MOV ahours, R16
-0001bc 940c 01a8                 	JMP confirmdectm
+000197 2e70                      	MOV shours, R16							;Set changes
+000198 940c 018a                 	JMP confirmdectm
                                  decrementSminutes:
-0001be ff81                      	SBRS mode, 1
-0001bf 2d08                      	MOV R16, smins 
-0001c0 fd81                      	SBRC mode, 1
-0001c1 2d02                      	MOV R16, amins
-0001c2 3000                      	CPI R16, 0
-0001c3 f021                      	BREQ underflowm
-0001c4 940e 02de                 	CALL time_dec
-0001c6 940c 01c9                 	JMP finaldecm
+00019a 2d08                      	MOV R16, smins							;Copy minutes
+00019b 3000                      	CPI R16, 0
+00019c f021                      	BREQ underflowm							;Compare to min
+00019d 940e 026e                 	CALL time_dec
+00019f 940c 01a2                 	JMP finaldecm							;Jmp to set changes 
                                  underflowm:
-0001c8 e509                      	LDI R16, 0x59
+0001a1 e509                      	LDI R16, 0x59							;Mov to max
                                  finaldecm:
-0001c9 ff81                      	SBRS mode, 1
-0001ca 2e80                      	MOV smins, R16
-0001cb fd81                      	SBRC mode, 1
-0001cc 2e20                      	MOV amins, R16
-0001cd 940c 01a8                 	JMP confirmdectm
+0001a2 2e80                      	MOV smins, R16							;Set changes
+0001a3 940c 018a                 	JMP confirmdectm
                                  decrementSseconds:
-0001cf ff81                      	SBRS mode, 1
-0001d0 2d09                      	MOV R16, ssecs 
-0001d1 fd81                      	SBRC mode, 1
-0001d2 2d03                      	MOV R16, asecs 
-0001d3 3000                      	CPI R16, 0
-0001d4 f021                      	BREQ underflows
-0001d5 940e 02de                 	CALL time_dec
-0001d7 940c 01da                 	JMP finaldecs
+0001a5 2d09                      	MOV R16, ssecs							;Copy seconds
+0001a6 3000                      	CPI R16, 0
+0001a7 f021                      	BREQ underflows							;Compare to min
+0001a8 940e 026e                 	CALL time_dec
+0001aa 940c 01ad                 	JMP finaldecs							;Jmp to set changes 
                                  underflows:
-0001d9 e203                      	LDI R16, 0x23
+0001ac e509                      	LDI R16, 0x59							;Mov to max
                                  finaldecs:
-0001da ff81                      	SBRS mode, 1
-0001db 2e90                      	MOV ssecs, R16
-0001dc fd81                      	SBRC mode, 1
-0001dd 2e30                      	MOV asecs, R16
-0001de 940c 01a8                 	JMP confirmdectm
-                                 
-                                 DASM:							;Mode >> Date or Alarm Date Settings
-0001e0 fed0                      	SBRS btndel, 0
-0001e1 982d                      	CBI PORTB, PB5
-0001e2 fcd0                      	SBRC btndel, 0
-0001e3 9a2d                      	SBI PORTB, PB5
-0001e4 2d1d                      	MOV R17, btndel
-0001e5 fd13                      	SBRC R17, PB3
-0001e6 940c 026a                 	JMP DEC_LEFTd
-0001e8 fd14                      	SBRC R17, PB4
-0001e9 940c 021a                 	JMP INC_RIGHTd
+0001ad 2e90                      	MOV ssecs, R16
+0001ae 940c 018a                 	JMP confirmdectm						;Set changes
+                                 //Mode >> Date or Alarm Date Settings -------------------------------------
+                                 DASM:							
+0001b0 fed0                      	SBRS btndel, 0					;Blink state >> Green
+0001b1 9829                      	CBI PORTB, PB1
+0001b2 fcd0                      	SBRC btndel, 0
+0001b3 9a29                      	SBI PORTB, PB1
+0001b4 2d1d                      	MOV R17, btndel					;Saves info of buttons changes
+0001b5 fd13                      	SBRC R17, PB3
+0001b6 940c 0213                 	JMP DEC_LEFTd					;Decrement dates
+0001b8 fd14                      	SBRC R17, PB4
+0001b9 940c 01de                 	JMP INC_RIGHTd					;Increment dates
                                  showdspdateset:
-0001eb 3092                      	CPI dissel, 2
-0001ec f080                      	BRLO sdays_settings				;Days settings jump
-0001ed f0b9                      	BREQ smonth1					;Month firstbit jump
-0001ee 3093                      	CPI dissel, 3
-0001ef f0e9                      	BREQ smonth0					;Month lsbit jump		
-0001f0 ff81                      	SBRS mode, 1
-0001f1 2d0c                      	MOV R16, syear
-0001f2 fd81                      	SBRC mode, 1
-0001f3 2d06                      	MOV R16, ayear
-0001f4 fd90                      	SBRC dissel, 0
-0001f5 940c 0215                 	JMP syears0						;Year lsbit jump
+0001bb 3092                      	CPI dissel, 2
+0001bc f068                      	BRLO sdays_settings				;Days settings jump
+0001bd f089                      	BREQ smonth1					;Month firstbit jump
+0001be 3093                      	CPI dissel, 3
+0001bf f0a1                      	BREQ smonth0					;Month lsbit jump		
+0001c0 2d0c                      	MOV R16, syear
+0001c1 fd90                      	SBRC dissel, 0
+0001c2 940c 01d9                 	JMP syears0						;Year lsbit jump
                                  	//year1
-0001f7 9502                      	SWAP R16
-0001f8 700f                      	CBR R16, 0xF0
-0001f9 940e 02ce                 	CALL D4_D5
-0001fb 940c 0076                 	JMP display_settings
+0001c4 9502                      	SWAP R16
+0001c5 700f                      	CBR R16, 0xF0
+0001c6 940e 025e                 	CALL D4_D5
+0001c8 940c 0076                 	JMP display_settings
                                  	sdays_settings:					;Days settings
-0001fd ff81                      		SBRS mode, 1
-0001fe 2d0a                      		MOV R16, sdays
-0001ff fd81                      		SBRC mode, 1
-000200 2d04                      		MOV R16, aday
-000201 940e 02b9                 		CALL D0_D1
-000203 940c 0076                 		JMP display_settings
+0001ca 2d0a                      		MOV R16, sdays
+0001cb 940e 0249                 		CALL D0_D1
+0001cd 940c 0076                 		JMP display_settings
                                  	smonth1:						;Month firstbit
-000205 ff81                      		SBRS mode, 1
-000206 2d0b                      		MOV R16, smonth
-000207 fd81                      		SBRC mode, 1
-000208 2d05                      		MOV R16, amonth
-000209 940e 02c1                 		CALL D2
-00020b 940c 0076                 		JMP display_settings
+0001cf 2d0b                      		MOV R16, smonth
+0001d0 940e 0251                 		CALL D2
+0001d2 940c 0076                 		JMP display_settings
                                  	smonth0:						;Month lsbit
-00020d ff81                      		SBRS mode, 1
-00020e 2d0b                      		MOV R16, smonth
-00020f fd81                      		SBRC mode, 1
-000210 2d05                      		MOV R16, amonth
-000211 940e 02c8                 		CALL D3
-000213 940c 0076                 		JMP display_settings	
+0001d4 2d0b                      		MOV R16, smonth
+0001d5 940e 0258                 		CALL D3
+0001d7 940c 0076                 		JMP display_settings	
                                  	syears0:						;Year lsbit
-000215 700f                      		CBR R16, 0xF0
-000216 940e 02ce                 		CALL D4_D5
-000218 940c 0076                 		JMP display_settings
+0001d9 700f                      		CBR R16, 0xF0
+0001da 940e 025e                 		CALL D4_D5
+0001dc 940c 0076                 		JMP display_settings		;Show on display
                                  INC_RIGHTd:
-00021a fd12                      	SBRC R17, PB2
-00021b 940c 01eb                 	JMP showdspdateset
-00021d 2d0f                      	MOV R16, movdsl
-00021e 3002                      	CPI R16, 2
-00021f f059                      	BREQ incrementSdays
-000220 3001                      	CPI R16, 1
-000221 f1a9                      	BREQ incrementSmonths
-000222 3000                      	CPI R16, 0
-000223 f111                      	BREQ incrementSyears
-000224 940c 01eb                 	JMP showdspdateset
+0001de fd12                      	SBRC R17, PB2					;Checks that the is no change on mode
+0001df 940c 01bb                 	JMP showdspdateset
+0001e1 2d0f                      	MOV R16, movdsl					;Selection of info
+0001e2 3000                      	CPI R16, 0
+0001e3 f059                      	BREQ incrementSyears			;Increment years
+0001e4 3001                      	CPI R16, 1
+0001e5 f119                      	BREQ incrementSmonths			;Increment months
+0001e6 3002                      	CPI R16, 2
+0001e7 f091                      	BREQ incrementSdays				;Increment days
+0001e8 940c 01bb                 	JMP showdspdateset
                                  confirmincdt:
-000226 2d1d                      	MOV R17, btndel
-000227 7e1f                      	CBR R17, 0x10
-000228 2ed1                      	MOV btndel, R17
-000229 940c 01eb                 	JMP showdspdateset
-                                 incrementSdays:
-00022b ff81                      	SBRS mode, 1
-00022c 2d0a                      	MOV R16, sdays
-00022d fd81                      	SBRC mode, 1
-00022e 2d04                      	MOV R16, aday 
-00022f e0fc                      	LDI ZH, HIGH(days_month<<1)	;Redirect to days of month table
-000230 e0e0                      	LDI ZL, LOW(days_month<<1)
-000231 ff81                      	SBRS mode, 1
-000232 0deb                      	ADD ZL, smonth				;Correct to the actual month
-000233 fd81                      	SBRC mode, 1
-000234 0de5                      	ADD ZL, amonth				;Correct to the actual month
-000235 9114                      	LPM R17, Z					;Max day of month
-000236 1701                      	CP R16, R17
-000237 f431                      	BRNE incrementday
-000238 ff81                      	SBRS mode, 1
-000239 e001                      	LDI R16, 1
-00023a fd81                      	SBRC mode, 1
-00023b 2700                      	CLR R16
-00023c 940c 0240                 	JMP setnewday
-                                 incrementday:
-00023e 940e 02d3                 	CALL time_inc
-                                 setnewday:
-000240 ff81                      	SBRS mode, 1
-000241 2ea0                      	MOV sdays, R16
-000242 fd81                      	SBRC mode, 1
-000243 2e40                      	MOV aday, R16
-000244 940c 0226                 	JMP confirmincdt
+0001ea 2d1d                      	MOV R17, btndel					;Reset state of buttons lecture
+0001eb 7e1f                      	CBR R17, 0x10
+0001ec 2ed1                      	MOV btndel, R17
+0001ed 940c 01bb                 	JMP showdspdateset
                                  incrementSyears:
-000246 ff81                      	SBRS mode, 1
-000247 2d0c                      	MOV R16, syear
-000248 fd81                      	SBRC mode, 1
-000249 2d06                      	MOV R16, ayear 
-00024a 3909                      	CPI R16, 0x99
-00024b f419                      	BRNE incrementyear
-00024c 2700                      	CLR R16
-00024d 940c 0251                 	JMP setnewyeari
+0001ef 2d0c                      	MOV R16, syear					;Copy year
+0001f0 3909                      	CPI R16, 0x99					
+0001f1 f419                      	BRNE incrementyear				;Compare to max
+0001f2 2700                      	CLR R16							;Reset
+0001f3 940c 01f7                 	JMP setnewyeari
                                  incrementyear:
-00024f 940e 02d3                 	CALL time_inc
-                                 setnewyeari:
-000251 ff81                      	SBRS mode, 1
-000252 2ec0                      	MOV syear, R16
-000253 fd81                      	SBRC mode, 1
-000254 2e60                      	MOV ayear, R16
-000255 940c 0226                 	JMP confirmincdt
+0001f5 940e 0263                 	CALL time_inc					;Increment year
+                                 setnewyeari:						;Set values
+0001f7 2ec0                      	MOV syear, R16
+0001f8 940c 01ea                 	JMP confirmincdt
+                                 incrementSdays:
+0001fa 2d0a                      	MOV R16, sdays					;Copy days
+0001fb e0fc                      	LDI ZH, HIGH(days_month<<1)		;Redirect to days of month table
+0001fc e0e0                      	LDI ZL, LOW(days_month<<1)
+0001fd 0deb                      	ADD ZL, smonth					;Correct to the actual month
+0001fe 9114                      	LPM R17, Z						;Max day of month
+0001ff 1701                      	CP R16, R17						;Compare to max
+000200 f419                      	BRNE incrementday				;Normal increment
+000201 e001                      	LDI R16, 1						;Reset
+000202 940c 0206                 	JMP setnewday					
+                                 incrementday:
+000204 940e 0263                 	CALL time_inc					;Normal increment
+                                 setnewday:
+000206 2ea0                      	MOV sdays, R16					;Set changes
+000207 940c 01ea                 	JMP confirmincdt
                                  incrementSmonths:
-000257 ff81                      	SBRS mode, 1
-000258 2d0b                      	MOV R16, smonth 
-000259 fd81                      	SBRC mode, 1
-00025a 2d05                      	MOV R16, amonth
-00025b 300c                      	CPI R16, 12
-00025c f431                      	BRNE incrementmonth
-00025d ff81                      	SBRS mode, 1
-00025e e001                      	LDI R16, 1
-00025f fd81                      	SBRC mode, 1
-000260 2700                      	CLR R16
-000261 940c 0264                 	JMP setnewmonth
+000209 2d0b                      	MOV R16, smonth					;Copy month
+00020a 300c                      	CPI R16, 12						
+00020b f419                      	BRNE incrementmonth				;Compare to max
+00020c e001                      	LDI R16, 1						;Reset
+00020d 940c 0210                 	JMP setnewmonth					;Jmp to set values
                                  incrementmonth:
-000263 9503                      	INC R16
+00020f 9503                      	INC R16							;Normal increment
                                  setnewmonth:
-000264 ff81                      	SBRS mode, 1
-000265 2e80                      	MOV smins, R16
-000266 fd81                      	SBRC mode, 1
-000267 2e20                      	MOV amins, R16
-000268 940c 0226                 	JMP confirmincdt
+000210 2eb0                      	MOV smonth, R16					;Set changes
+000211 940c 01ea                 	JMP confirmincdt
                                  DEC_LEFTd:
-00026a fd12                      	SBRC R17, PB2
-00026b 940c 01eb                 	JMP showdspdateset
-00026d 3000                      	CPI R16, 0
-00026e f1b9                      	BREQ decrementSyears
-00026f 3001                      	CPI R16, 1
-000270 f111                      	BREQ decrementSmonths
-000271 2d0f                      	MOV R16, movdsl
-000272 3002                      	CPI R16, 2
-000273 f039                      	BREQ decrementSdays
-000274 940c 01eb                 	JMP showdspdateset
+000213 fd12                      	SBRC R17, PB2					;Checks that the is no change on mode
+000214 940c 01bb                 	JMP showdspdateset
+000216 2d0f                      	MOV R16, movdsl					;Selection of info
+000217 3000                      	CPI R16, 0
+000218 f0d1                      	BREQ decrementSyears			;Decrement years
+000219 3001                      	CPI R16, 1
+00021a f119                      	BREQ decrementSmonths			;Decrement months
+00021b 3002                      	CPI R16, 2
+00021c f039                      	BREQ decrementSdays				;Decrement days
+00021d 940c 01bb                 	JMP showdspdateset
                                  confirmdecdt:
-000276 2d1d                      	MOV R17, btndel
-000277 7f17                      	CBR R17, 0x08
-000278 2ed1                      	MOV btndel, R17
-000279 940c 01eb                 	JMP showdspdateset
+00021f 2d1d                      	MOV R17, btndel					;Reset state of buttons lecture
+000220 7f17                      	CBR R17, 0x08
+000221 2ed1                      	MOV btndel, R17
+000222 940c 01bb                 	JMP showdspdateset
                                  decrementSdays:
-00027b ff81                      	SBRS mode, 1
-00027c 2d0a                      	MOV R16, sdays
-00027d fd81                      	SBRC mode, 1
-00027e 2d04                      	MOV R16, aday 
-00027f e0fc                      	LDI ZH, HIGH(days_month<<1)	;Redirect to days of month table
-000280 e0e0                      	LDI ZL, LOW(days_month<<1)
-000281 ff81                      	SBRS mode, 1
-000282 0deb                      	ADD ZL, smonth				;Correct to the actual month
-000283 fd81                      	SBRC mode, 1
-000284 0de5                      	ADD ZL, amonth				;Correct to the actual month
-000285 9114                      	LPM R17, Z					;Max day of month
-000286 3000                      	CPI R16, 0
-000287 f419                      	BRNE decrementday
-000288 2f01                      	MOV R16, R17
-000289 940c 028d                 	JMP setnewdayd
+000224 2d0a                      	MOV R16, sdays					;Copy days
+000225 e0fc                      	LDI ZH, HIGH(days_month<<1)		;Redirect to days of month table
+000226 e0e0                      	LDI ZL, LOW(days_month<<1)
+000227 0deb                      	ADD ZL, smonth					;Correct to the actual month
+000228 9114                      	LPM R17, Z						;Max day of month
+000229 3000                      	CPI R16, 0
+00022a f419                      	BRNE decrementday				;Normal decrement
+00022b 2f01                      	MOV R16, R17					;Max
+00022c 940c 0230                 	JMP setnewdayd					;Jmp set value
                                  decrementday:
-00028b 940e 02de                 	CALL time_dec
+00022e 940e 026e                 	CALL time_dec					;Decrement
                                  setnewdayd:
-00028d ff81                      	SBRS mode, 1
-00028e 2ea0                      	MOV sdays, R16
-00028f fd81                      	SBRC mode, 1
-000290 2e40                      	MOV aday, R16
-000291 940c 0276                 	JMP confirmdecdt
-                                 decrementSmonths:
-000293 ff81                      	SBRS mode, 1
-000294 2d0b                      	MOV R16, smonth 
-000295 fd81                      	SBRC mode, 1
-000296 2d05                      	MOV R16, amonth
-000297 ff81                      	SBRS mode, 1
-000298 3001                      	CPI R16, 1
-000299 fd81                      	SBRC mode, 1
-00029a 3000                      	CPI R16, 0
-00029b f419                      	BRNE decrementmonth
-00029c e00c                      	LDI R16, 12
-00029d 940c 02a0                 	JMP setnewmonthd
-                                 decrementmonth:
-00029f 9503                      	INC R16
-                                 setnewmonthd:
-0002a0 ff81                      	SBRS mode, 1
-0002a1 2e80                      	MOV smins, R16
-0002a2 fd81                      	SBRC mode, 1
-0002a3 2e20                      	MOV amins, R16
-0002a4 940c 0276                 	JMP confirmdecdt
+000230 2ea0                      	MOV sdays, R16					;Set changes
+000231 940c 021f                 	JMP confirmdecdt
                                  decrementSyears:
-0002a6 ff81                      	SBRS mode, 1
-0002a7 2d0c                      	MOV R16, syear
-0002a8 fd81                      	SBRC mode, 1
-0002a9 2d06                      	MOV R16, ayear 
-0002aa 3000                      	CPI R16, 0
-0002ab f419                      	BRNE decrementyear
-0002ac e909                      	LDI R16, 0x99
-0002ad 940c 02b1                 	JMP setnewyeard
+000233 2d0c                      	MOV R16, syear					;Copy years
+000234 3000                      	CPI R16, 0						
+000235 f419                      	BRNE decrementyear				;Compare min
+000236 e909                      	LDI R16, 0x99					;Change to max
+000237 940c 023b                 	JMP setnewyeard					;Jmp set value
                                  decrementyear:
-0002af 940e 02d3                 	CALL time_inc
+000239 940e 026e                 	CALL time_dec					;Normal decrement
                                  setnewyeard:
-0002b1 ff81                      	SBRS mode, 1
-0002b2 2ec0                      	MOV syear, R16
-0002b3 fd81                      	SBRC mode, 1
-0002b4 2e60                      	MOV ayear, R16
-0002b5 940c 0276                 	JMP confirmdecdt
-                                 
-                                 AAM:
-0002b7 940c 005f                 	JMP Loop
+00023b 2ec0                      	MOV syear, R16					;Set changes
+00023c 940c 021f                 	JMP confirmdecdt
+                                 decrementSmonths:
+00023e 2d0b                      	MOV R16, smonth					;Copy month
+00023f 3000                      	CPI R16, 0
+000240 f419                      	BRNE decrementmonth				;Compare to min
+000241 e909                      	LDI R16, 0x99					;Change to max
+000242 940c 0246                 	JMP setnewmonthd
+                                 decrementmonth:
+000244 940e 026e                 	CALL time_dec					;Normal decrement
+                                 setnewmonthd:
+000246 2eb0                      	MOV smonth, R16				;Set changes
+000247 940c 021f                 	JMP confirmdecdt
                                  //Subroutines
                                  D0_D1:
-0002b9 ff90                      	SBRS dissel, 0
-0002ba 9502                      	SWAP R16
-0002bb 700f                      	CBR R16, 0xF0
-0002bc e0fc                      	LDI ZH, HIGH(show2nm<<1)	;Redirect to displayed value
-0002bd e1ee                      	LDI ZL, LOW(show2nm<<1)
-0002be 0fe0                      	ADD ZL, R16
-0002bf 90e4                      	LPM display, Z
-0002c0 9508                      	RET
+000249 ff90                      	SBRS dissel, 0					;Decades or units
+00024a 9502                      	SWAP R16
+00024b 700f                      	CBR R16, 0xF0
+00024c e0fc                      	LDI ZH, HIGH(show2nm<<1)		;Redirect to displayed value
+00024d e1ec                      	LDI ZL, LOW(show2nm<<1)
+00024e 0fe0                      	ADD ZL, R16
+00024f 90e4                      	LPM display, Z					;Register to write portD
+000250 9508                      	RET
                                  D2:
-0002c1 9502                      	SWAP R16
-0002c2 700f                      	CBR R16, 0xF0
-0002c3 e0fc                      	LDI ZH, HIGH(showupdown<<1)	;Redirect to displayed value
-0002c4 e2e8                      	LDI ZL, LOW(showupdown<<1)
-0002c5 0fe0                      	ADD ZL, R16
-0002c6 90e4                      	LPM display, Z
-0002c7 9508                      	RET
+000251 9502                      	SWAP R16						;Decades
+000252 700f                      	CBR R16, 0xF0
+000253 e0fc                      	LDI ZH, HIGH(showupdown<<1)		;Redirect to displayed value
+000254 e2e6                      	LDI ZL, LOW(showupdown<<1)
+000255 0fe0                      	ADD ZL, R16
+000256 90e4                      	LPM display, Z					;Register to write portD
+000257 9508                      	RET
                                  D3:
-0002c8 700f                      	CBR R16, 0xF0
-0002c9 e0fc                      	LDI ZH, HIGH(shownormal<<1)	;Redirect to displayed value
-0002ca e3e2                      	LDI ZL, LOW(shownormal<<1)
-0002cb 0fe0                      	ADD ZL, R16
-0002cc 90e4                      	LPM display, Z
-0002cd 9508                      	RET
+000258 700f                      	CBR R16, 0xF0					;Units
+000259 e0fc                      	LDI ZH, HIGH(shownormal<<1)		;Redirect to displayed value
+00025a e3e0                      	LDI ZL, LOW(shownormal<<1)
+00025b 0fe0                      	ADD ZL, R16
+00025c 90e4                      	LPM display, Z					;Register to write portD
+00025d 9508                      	RET
                                  D4_D5:
-0002ce e0fc                      	LDI ZH, HIGH(show2updown<<1);Redirect to displayed value
-0002cf e3ec                      	LDI ZL, LOW(show2updown<<1)
-0002d0 0fe0                      	ADD ZL, R16
-0002d1 90e4                      	LPM display, Z
-0002d2 9508                      	RET	
+00025e e0fc                      	LDI ZH, HIGH(show2updown<<1)	;Redirect to displayed value
+00025f e3ea                      	LDI ZL, LOW(show2updown<<1)
+000260 0fe0                      	ADD ZL, R16
+000261 90e4                      	LPM display, Z					;Register to write portD
+000262 9508                      	RET	
                                  //Time automatic incrementers
                                  time_inc:
-0002d3 2f10                      	MOV R17, R16
-0002d4 701f                      	CBR R17, 0xF0
-0002d5 3019                      	CPI R17, 9
-0002d6 f429                      	BRNE normal_increment
-0002d7 9502                      	SWAP R16
-0002d8 700f                      	CBR R16, 0xF0
-0002d9 9503                      	INC R16
-0002da 9502                      	SWAP R16
-0002db 9508                      	RET
+000263 2f10                      	MOV R17, R16					;Save value
+000264 701f                      	CBR R17, 0xF0					
+000265 3019                      	CPI R17, 9						;Overflow
+000266 f429                      	BRNE normal_increment			;No overflow detected
+000267 9502                      	SWAP R16
+000268 700f                      	CBR R16, 0xF0
+000269 9503                      	INC R16							;Increment decades
+00026a 9502                      	SWAP R16
+00026b 9508                      	RET
                                  normal_increment:
-0002dc 9503                      	INC R16
-0002dd 9508                      	RET
+00026c 9503                      	INC R16							;Increment units
+00026d 9508                      	RET
                                  //Time automatic decrementers
                                  time_dec:
-0002de 2f10                      	MOV R17, R16
-0002df 701f                      	CBR R17, 0xF0
-0002e0 3010                      	CPI R17, 0
-0002e1 f439                      	BRNE normal_decrement
-0002e2 9502                      	SWAP R16
-0002e3 700f                      	CBR R16, 0xF0
-0002e4 950a                      	DEC R16
-0002e5 9502                      	SWAP R16
-0002e6 e019                      	LDI R17, 0x09
-0002e7 0f01                      	ADD R16, R17
-0002e8 9508                      	RET
+00026e 2f10                      	MOV R17, R16					;Save value
+00026f 701f                      	CBR R17, 0xF0
+000270 3010                      	CPI R17, 0						;Underflow
+000271 f439                      	BRNE normal_decrement			;No underflow detected
+000272 9502                      	SWAP R16
+000273 700f                      	CBR R16, 0xF0					
+000274 950a                      	DEC R16							;Decrement decades
+000275 9502                      	SWAP R16
+000276 e019                      	LDI R17, 0x09					;Set units at 9
+000277 0f01                      	ADD R16, R17
+000278 9508                      	RET
                                  normal_decrement:
-0002e9 950a                      	DEC R16
-0002ea 9508                      	RET
+000279 950a                      	DEC R16							;Decrement units
+00027a 9508                      	RET
                                  //BUTTONS PIN CHANGE ---------------------------------------------- //
                                  PCINT0_INT:
-0002eb 930f                      	PUSH R16					;Save initial conditions
-0002ec 931f                      	PUSH R17
-0002ed 9100 003f                 	LDS R16, SREG
-0002ef 930f                      	PUSH R16
-0002f0 b103                      	IN R16, PINB				
-0002f1 710c                      	CBR R16, 0xE3
-0002f2 310c                      	CPI R16, 0x1C
-0002f3 f1c1                      	BREQ completepcint
-0002f4 3084                      	CPI mode, 4
-0002f5 f008                      	BRLO changemodes
-0002f6 f55c                      	BRGE setnewvalues
+00027b 930f                      	PUSH R16						;Save initial conditions
+00027c 931f                      	PUSH R17
+00027d 9100 003f                 	LDS R16, SREG
+00027f 930f                      	PUSH R16
+000280 b103                      	IN R16, PINB					;Pin Change detection
+000281 710c                      	CBR R16, 0xE3
+000282 310c                      	CPI R16, 0x1C
+000283 f029                      	BREQ jmpcompletepcint			;No changes, pressing buttons
+000284 3084                      	CPI mode, 4
+000285 f028                      	BRLO changemodes				
+000286 f404                      	BRGE jmpsetnewvalues
+                                 jmpsetnewvalues:
+000287 940c 02c4                 	JMP setnewvalues
+                                 jmpcompletepcint:
+000289 940c 02ce                 	JMP completepcint
                                  changemodes:
-0002f7 ff04                      	SBRS R16, PB4
-0002f8 940c 032c                 	JMP completepcint
-0002fa ff03                      	SBRS R16, PB3
-0002fb 940c 0300                 	JMP changeshownmode
-0002fd ff02                      	SBRS R16, PB2
-0002fe 940c 030c                 	JMP intosettings
+00028b ff04                      	SBRS R16, PB4					;Don't care
+00028c 940c 02ce                 	JMP completepcint
+00028e ff03                      	SBRS R16, PB3
+00028f 940c 0294                 	JMP changeshownmode				;Change mode (Time>>Date>>AlarmTime>>AlarmDate)
+000291 ff02                      	SBRS R16, PB2
+000292 940c 02a0                 	JMP intosettings				;Start settings of any mode
                                  changeshownmode:
-000300 9828                      	CBI PORTB, PB0
-000301 9829                      	CBI PORTB, PB1
-000302 982d                      	CBI PORTB, PB5
-000303 2799                      	CLR dissel
-000304 3083                      	CPI mode, 3
-000305 f019                      	BREQ resetmode
-000306 9583                      	INC mode
-000307 940c 032c                 	JMP completepcint
+000294 9828                      	CBI PORTB, PB0					;Clear all leds
+000295 9829                      	CBI PORTB, PB1
+000296 982d                      	CBI PORTB, PB5
+000297 2799                      	CLR dissel
+000298 3083                      	CPI mode, 3						;Changes just into the first four modes >> Show
+000299 f019                      	BREQ resetmode
+00029a 9583                      	INC mode
+00029b 940c 02ce                 	JMP completepcint
                                  resetmode:
-000309 2788                      	CLR mode
-00030a 940c 032c                 	JMP completepcint
+00029d 2788                      	CLR mode						;Reset
+00029e 940c 02ce                 	JMP completepcint
                                  intosettings:
-00030c 9828                      	CBI PORTB, PB0
-00030d 9829                      	CBI PORTB, PB1
-00030e 982d                      	CBI PORTB, PB5
-00030f e014                      	LDI R17, 4 
-000310 0f81                      	ADD mode, R17
-000311 708f                      	CBR mode, 0xF0
-000312 3084                      	CPI mode, 4
-000313 f021                      	BREQ copytime
-000314 3085                      	CPI mode, 5
-000315 f039                      	BREQ copydate
-000316 940c 032c                 	JMP completepcint
+0002a0 9828                      	CBI PORTB, PB0					;Clear all leds
+0002a1 9829                      	CBI PORTB, PB1
+0002a2 982d                      	CBI PORTB, PB5
+0002a3 e014                      	LDI R17, 4						;Get into settings
+0002a4 0f81                      	ADD mode, R17
+0002a5 708f                      	CBR mode, 0xF0
+0002a6 3084                      	CPI mode, 4
+0002a7 f041                      	BREQ copytime					;Copy register into settings register
+0002a8 3085                      	CPI mode, 5
+0002a9 f059                      	BREQ copydate					;Copy register into settings register
+0002aa 3086                      	CPI mode, 6
+0002ab f071                      	BREQ copyatime					;Copy register into settings register
+0002ac 3087                      	CPI mode, 7
+0002ad f089                      	BREQ copyadate					;Copy register into settings register
+0002ae 940c 02ce                 	JMP completepcint
                                  copytime:
-000318 2e72                      	MOV shours, hours
-000319 2e83                      	MOV smins, minutes
-00031a 2e94                      	MOV ssecs, seconds
-00031b 940c 032c                 	JMP completepcint
+0002b0 2e72                      	MOV shours, hours
+0002b1 2e83                      	MOV smins, minutes
+0002b2 2e94                      	MOV ssecs, seconds
+0002b3 940c 02ce                 	JMP completepcint
                                  copydate:
-00031d 2ea5                      	MOV sdays, day
-00031e 2eb6                      	MOV smonth, month
-00031f 2ec7                      	MOV syear, year
-000320 940c 032c                 	JMP completepcint
+0002b5 2ea5                      	MOV sdays, day
+0002b6 2eb6                      	MOV smonth, month
+0002b7 2ec7                      	MOV syear, year
+0002b8 940c 02ce                 	JMP completepcint
+                                 copyatime:
+0002ba 2c71                      	MOV shours, ahours
+0002bb 2c82                      	MOV smins, amins
+0002bc 2c93                      	MOV ssecs, asecs
+0002bd 940c 02ce                 	JMP completepcint
+                                 copyadate:
+0002bf 2ca4                      	MOV sdays, aday
+0002c0 2cb5                      	MOV smonth, amonth
+0002c1 2cc6                      	MOV syear, ayear
+0002c2 940c 02ce                 	JMP completepcint
                                  setnewvalues:
-000322 2d1d                      	MOV R17, btndel
-000323 7011                      	CBR R17, 0xFE
-000324 ff04                      	SBRS R16, PB4
-000325 6110                      	SBR R17, 0x10
-000326 ff03                      	SBRS R16, PB3
-000327 6018                      	SBR R17, 0x08
-000328 ff02                      	SBRS R16, PB2
-000329 940c 0335                 	JMP exitsettings
-00032b 2ed1                      	MOV btndel, R17
+0002c4 2d1d                      	MOV R17, btndel					;Buttons recognizers
+0002c5 7011                      	CBR R17, 0xFE
+0002c6 ff04                      	SBRS R16, PB4					;Button press Inc
+0002c7 6110                      	SBR R17, 0x10
+0002c8 ff03                      	SBRS R16, PB3					;Button press Dec
+0002c9 6018                      	SBR R17, 0x08
+0002ca 2ed1                      	MOV btndel, R17					;Save buttons changes
+0002cb ff02                      	SBRS R16, PB2
+0002cc 940c 02d7                 	JMP exitsettings				;Set values changes on settings and change info selected to change
                                  completepcint:
-00032c 2700                      	CLR R16
-00032d 9300 006b                 	STS PCMSK0, R16				;Disable Pin Change on PB4, PB3 and PB2
-00032f 910f                      	POP R16
-000330 9300 003f                 	STS SREG, R16
-000332 911f                      	POP R17
-000333 910f                      	POP R16	
-000334 9518                      	RETI	
+0002ce 2700                      	CLR R16
+0002cf 9300 006b                 	STS PCMSK0, R16				;Disable Pin Change on PB4, PB3 and PB2
+0002d1 910f                      	POP R16
+0002d2 9300 003f                 	STS SREG, R16
+0002d4 911f                      	POP R17
+0002d5 910f                      	POP R16	
+0002d6 9518                      	RETI	
                                  exitsettings:	
-000335 2d0f                      	MOV R16, movdsl
-000336 9503                      	INC R16
-000337 2ef0                      	MOV movdsl, R16
-000338 3003                      	CPI R16, 3
-000339 f791                      	BRNE completepcint
-00033a 24ff                      	CLR movdsl
-00033b 5084                      	SUBI mode, 4
-00033c 2d27                      	MOV hours, shours
-00033d 2d38                      	MOV minutes, smins
-00033e 2d49                      	MOV seconds, ssecs
-00033f 940c 032c                 	JMP completepcint
+0002d7 2d0f                      	MOV R16, movdsl
+0002d8 9503                      	INC R16						;Three states of changes
+0002d9 2ef0                      	MOV movdsl, R16	
+0002da 3003                      	CPI R16, 3
+0002db f390                      	BRLO completepcint			;At 3(fourth state) clear all and reset settings
+0002dc 24ff                      	CLR movdsl
+0002dd 3084                      	CPI mode, 4
+0002de f041                      	BREQ scopytime				;Set info changed
+0002df 3085                      	CPI mode, 5
+0002e0 f061                      	BREQ scopydate				;Set info changed
+0002e1 3086                      	CPI mode, 6
+0002e2 f081                      	BREQ scopyatime				;Set info changed
+0002e3 3087                      	CPI mode, 7
+0002e4 f0a1                      	BREQ scopyadate				;Set info changed
+0002e5 940c 02ce                 	JMP completepcint
+                                 scopytime:
+0002e7 2d27                      	MOV hours, shours
+0002e8 2d38                      	MOV minutes, smins
+0002e9 2d49                      	MOV seconds, ssecs
+0002ea 5084                      	SUBI mode, 4
+0002eb 940c 02ce                 	JMP completepcint
+                                 scopydate:
+0002ed 2d5a                      	MOV day, sdays
+0002ee 2d6b                      	MOV month, smonth
+0002ef 2d7c                      	MOV year, syear
+0002f0 5084                      	SUBI mode, 4
+0002f1 940c 02ce                 	JMP completepcint
+                                 scopyatime:
+0002f3 2c17                      	MOV ahours, shours
+0002f4 2c28                      	MOV amins, smins
+0002f5 2c39                      	MOV asecs, ssecs
+0002f6 5084                      	SUBI mode, 4
+0002f7 940c 02ce                 	JMP completepcint
+                                 scopyadate:
+0002f9 2c4a                      	MOV aday, sdays
+0002fa 2c5b                      	MOV amonth, smonth
+0002fb 2c6c                      	MOV ayear, syear
+0002fc 5084                      	SUBI mode, 4
+0002fd 940c 02ce                 	JMP completepcint
                                  //CTC TIMER0 ----------------------------------------------------- //
                                  TIMER0_COMPA:
-000341 6098                      	SBR dissel, 0x08			;2.5ms delay
-000342 9518                      	RETI
+0002ff 6098                      	SBR dissel, 0x08			;2.5ms delay
+000300 fcd7                      	SBRC btndel, 7
+000301 940c 0304                 	JMP alarm_time
+000303 9518                      	RETI
+                                 alarm_time:
+000304 930f                      	PUSH R16					;Save initial conditions
+000305 931f                      	PUSH R17
+000306 9100 003f                 	LDS R16, SREG
+000308 930f                      	PUSH R16
+000309 9403                      	INC timeal
+00030a 9a2d                      	SBI PORTB, PB5
+00030b 2d00                      	MOV R16, timeal
+00030c 3f0e                      	CPI R16, 0xFE
+00030d f421                      	BRNE endalint
+00030e 982d                      	CBI PORTB,PB5
+00030f 2d0d                      	MOV R16, btndel
+000310 770f                      	CBR R16, 0x80
+000311 2ed0                      	MOV btndel, R16
+                                 endalint:
+000312 910f                      	POP R16
+000313 9300 003f                 	STS SREG, R16
+000315 911f                      	POP R17
+000316 910f                      	POP R16	
+000317 9518                      	RETI
                                  TIMER1_COMPA:
-000343 930f                      	PUSH R16					;Save initial conditions
-000344 931f                      	PUSH R17
-000345 9100 003f                 	LDS R16, SREG
-000347 930f                      	PUSH R16
-000348 2d0d                      	MOV R16, btndel
-000349 9503                      	INC R16
-00034a 7001                      	CBR R16, 0xFE
-00034b 2ed0                      	MOV btndel, R16
-00034c 3000                      	CPI R16, 0
-00034d f5b1                      	BRNE completetimer1int
-00034e 2f04                      	MOV R16, seconds
-00034f 940e 02d3                 	CALL time_inc
-000351 2f40                      	MOV seconds, R16
-000352 3640                      	CPI seconds, 0x60			;Seconds completes 1 min
-000353 f581                      	BRNE completetimer1int
-000354 2744                      	CLR seconds					;Restart seconds
-000355 2f03                      	MOV R16, minutes
-000356 940e 02d3                 	CALL time_inc
-000358 2f30                      	MOV minutes, R16
-000359 3630                      	CPI minutes, 0x60			;Seconds completes 1 hour
-00035a f549                      	BRNE completetimer1int
-00035b 2733                      	CLR minutes					;Restart minutes
-00035c 2f02                      	MOV R16, hours
-00035d 940e 02d3                 	CALL time_inc
-00035f 2f20                      	MOV hours, R16
-000360 3224                      	CPI hours, 0x24				;Day complete
-000361 f511                      	BRNE completetimer1int
-000362 2722                      	CLR hours					;Restart hours
-000363 e0fc                      	LDI ZH, HIGH(days_month<<1)	;Redirect to days of month table
-000364 e0e0                      	LDI ZL, LOW(days_month<<1)
-000365 0fe6                      	ADD ZL, month				;Correct to the actual month
-000366 9104                      	LPM R16, Z					;Max day of month
-000367 3062                      	CPI month, 2
-000368 f429                      	BRNE checkmaxofmonth
-000369 2f17                      	MOV R17, year
-00036a 7013                      	CBR R17, 0xFC				;Conserve less 2 significant bits
-00036b 3010                      	CPI R17, 0					;Check if the number is multiple of four
-00036c f409                      	BRNE checkmaxofmonth
-00036d e209                      	LDI R16, 41					;Max of february/leap_year * 0x29
+000318 930f                      	PUSH R16					;Save initial conditions
+000319 931f                      	PUSH R17
+00031a 9100 003f                 	LDS R16, SREG
+00031c 930f                      	PUSH R16
+00031d 2d0d                      	MOV R16, btndel
+00031e 9503                      	INC R16
+00031f 7001                      	CBR R16, 0xFE
+000320 2ed0                      	MOV btndel, R16
+000321 3000                      	CPI R16, 0
+000322 f5b1                      	BRNE completetimer1int
+000323 2f04                      	MOV R16, seconds
+000324 940e 0263                 	CALL time_inc
+000326 2f40                      	MOV seconds, R16
+000327 3640                      	CPI seconds, 0x60			;Seconds completes 1 min
+000328 f581                      	BRNE completetimer1int
+000329 2744                      	CLR seconds					;Restart seconds
+00032a 2f03                      	MOV R16, minutes
+00032b 940e 0263                 	CALL time_inc
+00032d 2f30                      	MOV minutes, R16
+00032e 3630                      	CPI minutes, 0x60			;Seconds completes 1 hour
+00032f f549                      	BRNE completetimer1int
+000330 2733                      	CLR minutes					;Restart minutes
+000331 2f02                      	MOV R16, hours
+000332 940e 0263                 	CALL time_inc
+000334 2f20                      	MOV hours, R16
+000335 3224                      	CPI hours, 0x24				;Day complete
+000336 f511                      	BRNE completetimer1int
+000337 2722                      	CLR hours					;Restart hours
+000338 e0fc                      	LDI ZH, HIGH(days_month<<1)	;Redirect to days of month table
+000339 e0e0                      	LDI ZL, LOW(days_month<<1)
+00033a 0fe6                      	ADD ZL, month				;Correct to the actual month
+00033b 9104                      	LPM R16, Z					;Max day of month
+00033c 3062                      	CPI month, 2
+00033d f429                      	BRNE checkmaxofmonth
+00033e 2f17                      	MOV R17, year
+00033f 7013                      	CBR R17, 0xFC				;Conserve less 2 significant bits
+000340 3010                      	CPI R17, 0					;Check if the number is multiple of four
+000341 f409                      	BRNE checkmaxofmonth
+000342 e209                      	LDI R16, 41					;Max of february/leap_year * 0x29
                                  checkmaxofmonth:
-00036e 1705                      	CP R16, day					;Compare day to max of each month
-00036f f031                      	BREQ aincrementmonth
-000370 2f05                      	MOV R16, day
-000371 940e 02d3                 	CALL time_inc
-000373 2f50                      	MOV day, R16				;Day increment
-000374 940c 0384                 	JMP completetimer1int
+000343 1705                      	CP R16, day					;Compare day to max of each month
+000344 f031                      	BREQ aincrementmonth
+000345 2f05                      	MOV R16, day
+000346 940e 0263                 	CALL time_inc
+000348 2f50                      	MOV day, R16				;Day increment
+000349 940c 0359                 	JMP completetimer1int
                                  aincrementmonth:
-000376 e051                      	LDI day, 1					;Start of month
-000377 306c                      	CPI month, 12
-000378 f019                      	BREQ aincrementyear
-000379 9563                      	INC month
-00037a 940c 0384                 	JMP completetimer1int
+00034b e051                      	LDI day, 1					;Start of month
+00034c 306c                      	CPI month, 12
+00034d f019                      	BREQ aincrementyear
+00034e 9563                      	INC month
+00034f 940c 0359                 	JMP completetimer1int
                                  aincrementyear:
-00037c e061                      	LDI month, 1				;Start of the year
-00037d 2f07                      	MOV R16, year
-00037e 940e 02d3                 	CALL time_inc
-000380 2f70                      	MOV year, R16
-000381 3a70                      	CPI year, 0xA0				;Max of 2 digits years shown
-000382 f409                      	BRNE completetimer1int
-000383 2777                      	CLR year
+000351 e061                      	LDI month, 1				;Start of the year
+000352 2f07                      	MOV R16, year
+000353 940e 0263                 	CALL time_inc
+000355 2f70                      	MOV year, R16
+000356 3a70                      	CPI year, 0xA0				;Max of 2 digits years shown
+000357 f409                      	BRNE completetimer1int
+000358 2777                      	CLR year
                                  completetimer1int:
-000384 910f                      	POP R16
-000385 9300 003f                 	STS SREG, R16
-000387 911f                      	POP R17
-000388 910f                      	POP R16	
-000389 9518                      	RETI
+000359 1612                      	CP ahours, hours
+00035a f439                      	BRNE endint
+00035b 1623                      	CP amins, minutes
+00035c f429                      	BRNE endint
+00035d 1634                      	CP asecs, seconds
+00035e f419                      	BRNE endint
+00035f 2d0d                      	MOV R16, btndel
+000360 6800                      	SBR R16, 0x80
+000361 2ed0                      	MOV btndel, R16
+                                 endint:
+000362 910f                      	POP R16
+000363 9300 003f                 	STS SREG, R16
+000365 911f                      	POP R17
+000366 910f                      	POP R16	
+000367 9518                      	RETI
                                  // Data Tables --------------------------------------------------- //
                                  .org 0x600
 000600 3100
@@ -1944,31 +1913,30 @@ C:\Users\ferch\OneDrive\Documentos\GitHub\Laboratorio\Proyecto1\Proyecto1\main.a
 000606 0031                      	days_month:	.DB 0,49,40,49,48,49,48,49,49,48,49,48,49,0
 000607 b692
 000608 ffda
-000609 e024
-00060a e024
-00060b 00b7                      	modejumps:	.DB MST,SDM,ATM,ADM,TA_S,DASM,TA_S,DASM,AAM,0
-00060c 0201
-00060d 0804
-00060e 2010                      	selector:	.DB 1,2,4,8,16,32
-00060f 88de
-000610 ece6
-000611 7cb8
-000612 c87e
-000613 fcfe                      	show2nm:	.DB 222,136,230,236,184,124,126,200,254,252
-000614 42fa
-000615 d6dc
-000616 b666
-000617 52be
-000618 f6fe                      	showupdown: .DB 250,66,220,214,102,182,190,82,254,246
-000619 42de
-00061a 7a7c
-00061b bae2
-00061c 52be
-00061d fafe                      	shownormal:	.DB 222,66,124,122,226,186,190,82,254,250
-00061e 90fc
-00061f b63e
-000620 e6d2
-000621 b0ee
+000609 b024
+00060a b024                      	modejumps:	.DB MST,SDM,ATM,ADM,TA_S,DASM,TA_S,DASM
+00060b 0201
+00060c 0804
+00060d 2010                      	selector:	.DB 1,2,4,8,16,32
+00060e 88de
+00060f ece6
+000610 7cb8
+000611 c87e
+000612 fcfe                      	show2nm:	.DB 222,136,230,236,184,124,126,200,254,252
+000613 42fa
+000614 d6dc
+000615 b666
+000616 52be
+000617 f6fe                      	showupdown: .DB 250,66,220,214,102,182,190,82,254,246
+000618 42de
+000619 7a7c
+00061a bae2
+00061b 52be
+00061c fafe                      	shownormal:	.DB 222,66,124,122,226,186,190,82,254,250
+00061d 90fc
+00061e b63e
+00061f e6d2
+000620 b0ee
 
 
 RESOURCE USE INFORMATION
@@ -1986,39 +1954,39 @@ counted separately from r26..r31 here.
 .dseg memory usage only counts static data declared with .byte
 
 "ATmega328P" register use summary:
-x  :   0 y  :   0 z  :   9 r0 :   0 r1 :   7 r2 :  11 r3 :   7 r4 :   7 
-r5 :   9 r6 :   7 r7 :   7 r8 :  10 r9 :   7 r10:   6 r11:   7 r12:   6 
-r13:  20 r14:   7 r15:   8 r16: 264 r17:  50 r18:   8 r19:   9 r20:   8 
-r21:   7 r22:   9 r23:   8 r24:  85 r25:  31 r26:   0 r27:   0 r28:   0 
-r29:   0 r30:  21 r31:  11 
-Registers used: 28 out of 35 (80.0%)
+x  :   0 y  :   0 z  :   9 r0 :   2 r1 :   5 r2 :   6 r3 :   5 r4 :   4 
+r5 :   5 r6 :   4 r7 :   9 r8 :  10 r9 :   9 r10:   9 r11:  12 r12:   9 
+r13:  25 r14:   7 r15:   8 r16: 242 r17:  52 r18:   9 r19:  10 r20:   9 
+r21:   8 r22:  10 r23:   9 r24:  20 r25:  31 r26:   0 r27:   0 r28:   0 
+r29:   0 r30:  19 r31:  11 
+Registers used: 29 out of 35 (82.9%)
 
 "ATmega328P" instruction use summary:
-.lds  :   0 .sts  :   0 adc   :   0 add   :  14 adiw  :   0 and   :   0 
+.lds  :   0 .sts  :   0 adc   :   0 add   :  12 adiw  :   0 and   :   0 
 andi  :   0 asr   :   0 bclr  :   0 bld   :   0 brbc  :   0 brbs  :   0 
-brcc  :   0 brcs  :   0 break :   0 breq  :  37 brge  :   2 brhc  :   0 
-brhs  :   0 brid  :   0 brie  :   0 brlo  :   7 brlt  :   0 brmi  :   0 
-brne  :  20 brpl  :   0 brsh  :   0 brtc  :   0 brts  :   0 brvc  :   0 
-brvs  :   0 bset  :   0 bst   :   0 call  :  45 cbi   :   8 cbr   :  31 
-clc   :   0 clh   :   0 cli   :   0 cln   :   0 clr   :  21 cls   :   0 
-clt   :   0 clv   :   0 clz   :   0 com   :   0 cp    :   2 cpc   :   0 
-cpi   :  58 cpse  :   0 dec   :   2 eor   :   0 fmul  :   0 fmuls :   0 
-fmulsu:   0 icall :   0 ijmp  :   2 in    :   2 inc   :   9 jmp   :  96 
-ld    :   0 ldd   :   0 ldi   :  58 lds   :   2 lpm   :  18 lsl   :   0 
-lsr   :   0 mov   : 130 movw  :   0 mul   :   0 muls  :   0 mulsu :   0 
-neg   :   0 nop   :   0 or    :   0 ori   :   0 out   :  12 pop   :   6 
-push  :   6 rcall :   0 ret   :   8 reti  :   3 rjmp  :   0 rol   :   0 
-ror   :   0 sbc   :   0 sbci  :   0 sbi   :   8 sbic  :   0 sbis  :   0 
-sbiw  :   0 sbr   :   3 sbrc  :  53 sbrs  :  47 sec   :   0 seh   :   0 
+brcc  :   0 brcs  :   0 break :   0 breq  :  43 brge  :   2 brhc  :   0 
+brhs  :   0 brid  :   0 brie  :   0 brlo  :   8 brlt  :   0 brmi  :   0 
+brne  :  23 brpl  :   0 brsh  :   0 brtc  :   0 brts  :   0 brvc  :   0 
+brvs  :   0 bset  :   0 bst   :   0 call  :  46 cbi   :   9 cbr   :  32 
+clc   :   0 clh   :   0 cli   :   0 cln   :   0 clr   :  19 cls   :   0 
+clt   :   0 clv   :   0 clz   :   0 com   :   0 cp    :   5 cpc   :   0 
+cpi   :  64 cpse  :   0 dec   :   2 eor   :   0 fmul  :   0 fmuls :   0 
+fmulsu:   0 icall :   0 ijmp  :   2 in    :   2 inc   :   9 jmp   : 104 
+ld    :   0 ldd   :   0 ldi   :  58 lds   :   3 lpm   :  18 lsl   :   0 
+lsr   :   0 mov   : 118 movw  :   0 mul   :   0 muls  :   0 mulsu :   0 
+neg   :   0 nop   :   0 or    :   0 ori   :   0 out   :  12 pop   :   9 
+push  :   9 rcall :   0 ret   :   8 reti  :   4 rjmp  :   0 rol   :   0 
+ror   :   0 sbc   :   0 sbci  :   0 sbi   :   9 sbic  :   0 sbis  :   0 
+sbiw  :   0 sbr   :   4 sbrc  :  17 sbrs  :  10 sec   :   0 seh   :   0 
 sei   :   1 sen   :   0 ser   :   0 ses   :   0 set   :   0 sev   :   0 
-sez   :   0 sleep :   0 spm   :   0 st    :   0 std   :   0 sts   :  13 
-sub   :   0 subi  :   1 swap  :  12 tst   :   0 wdr   :   0 
+sez   :   0 sleep :   0 spm   :   0 st    :   0 std   :   0 sts   :  14 
+sub   :   0 subi  :   4 swap  :  12 tst   :   0 wdr   :   0 
 Instructions used: 33 out of 113 (29.2%)
 
 "ATmega328P" memory use summary [bytes]:
 Segment   Begin    End      Code   Data   Used    Size   Use%
 ---------------------------------------------------------------
-[.cseg] 0x000000 0x000c46   1768     70   1838   32768   5.6%
+[.cseg] 0x000000 0x000c44   1700     68   1768   32768   5.4%
 [.dseg] 0x000100 0x000100      0      0      0    2048   0.0%
 [.eseg] 0x000000 0x000000      0      0      0    1024   0.0%
 
