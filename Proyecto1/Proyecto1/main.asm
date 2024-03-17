@@ -127,15 +127,6 @@ Loop:
 doublebyte:
 	LDI R31, 1
 	IJMP
-//Enable buttons
-enablebtns:
-	IN R16, PINB							;Checks if buttons stabilized after 15ms
-	CBR R16, 0xE3
-	CPI R16, 0x1C
-	BRNE continuedisplayset					;If the stabilized it lets buttons react
-	LDI R16, (1<<PCINT4)|(1<<PCINT3)|(1<<PCINT2)
-	STS PCMSK0, R16
-	JMP continuedisplayset
 //Display assign of selector and value
 display_settings:
 	CPI dissel, 5
@@ -166,6 +157,15 @@ completedisplay:
 reset:
 	CLR dissel								;Loop of selector (5>>0)
 	JMP Loop
+//Enable buttons
+enablebtns:
+	IN R16, PINB							;Checks if buttons stabilized after 15ms
+	CBR R16, 0xE3
+	CPI R16, 0x1C
+	BRNE continuedisplayset					;If the stabilized it lets buttons react
+	LDI R16, (1<<PCINT4)|(1<<PCINT3)|(1<<PCINT2)
+	STS PCMSK0, R16
+	JMP continuedisplayset
 //Mode >> Show Time ----------------------------------------------------
 MST:							
 	SBI PORTB, PB0							;Identifier (Blue)
